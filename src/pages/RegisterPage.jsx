@@ -53,7 +53,7 @@ function RegisterPage() {
     try {
       await registerUser(data.email, data.password, data.displayName, selectedSkills);
       toast.success('Account created successfully!');
-      navigate('/dashboard');
+      navigate('/feed');
     } catch (error) {
       const messages = {
         'auth/email-already-in-use': 'An account with this email already exists.',
@@ -70,7 +70,7 @@ function RegisterPage() {
     try {
       await loginWithGoogle();
       toast.success('Account created successfully!');
-      navigate('/dashboard');
+      navigate('/feed');
     } catch (error) {
       if (error.code !== 'auth/popup-closed-by-user') {
         toast.error('Failed to sign up with Google.');

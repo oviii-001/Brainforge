@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   collection, query, where, orderBy, getDocs, limit, startAfter,
@@ -9,22 +9,27 @@ import FeedCard from '@/features/feed/FeedCard';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/common/EmptyState';
 import Button from '@/components/ui/Button';
-import { Rss, Compass, Users, TrendingUp } from 'lucide-react';
+import Spinner from '@/components/ui/Spinner';
+import { Rss, Compass, Users, TrendingUp, RefreshCw, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 
-const FEED_PER_PAGE = 12;
+const FEED_PER_PAGE = 10;
 
 function FeedPage() {
   const { user } = useAuth();
-  const [feedType, setFeedType] = useState('following'); // 'following' | 'trending' | 'latest'
+  const [feedType, setFeedType] = useState('trending'); // default to trending — always has content
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [lastDoc, setLastDoc] = useState(null);
   const [hasMore, setHasMore] = useState(true);
   const [followingIds, setFollowingIds] = useState([]);
   const [followingLoaded, setFollowingLoaded] = useState(false);
+
+  const observerRef = useRef(null);
+  const loadMoreTriggerRef = useRef(null);
 
   // Fetch who the user follows
   useEffect(() => {
@@ -39,6 +44,28 @@ function FeedPage() {
     fetchFeed();
   }, [feedType, followingLoaded]);
 
+  // Infinite scroll observer
+  useEffect(() => {
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          fetchFeed(true);
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    if (loadMoreTriggerRef.current) {
+      observerRef.current.observe(loadMoreTriggerRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [hasMore, loading, loadingMore, lastDoc, feedType, followingIds]);
+
   const fetchFollowing = async () => {
     try {
       const snap = await getDocs(collection(db, 'users', user.uid, 'following'));
@@ -51,8 +78,13 @@ function FeedPage() {
     }
   };
 
-  const fetchFeed = async (loadMore = false) => {
-    if (!loadMore) setLoading(true);
+  const fetchFeed = useCallback(async (loadMore = false) => {
+    if (loadMore) {
+      if (!hasMore || loadingMore) return;
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       let constraints = [];
 
@@ -61,9 +93,9 @@ function FeedPage() {
           setIdeas([]);
           setHasMore(false);
           setLoading(false);
+          setLoadingMore(false);
           return;
         }
-        // Firestore 'in' operator supports max 30 values
         const batchIds = followingIds.slice(0, 30);
         constraints = [
           where('ownerId', 'in', batchIds),
@@ -78,7 +110,6 @@ function FeedPage() {
           limit(FEED_PER_PAGE),
         ];
       } else {
-        // latest
         constraints = [
           where('status', '==', 'published'),
           orderBy('createdAt', 'desc'),
@@ -106,8 +137,9 @@ function FeedPage() {
       console.error('Error fetching feed:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [feedType, followingIds, followingLoaded, lastDoc, hasMore, loadingMore]);
 
   const handleTabChange = (type) => {
     if (type === feedType) return;
@@ -116,50 +148,68 @@ function FeedPage() {
     setHasMore(true);
   };
 
+  const handleRefresh = () => {
+    setLastDoc(null);
+    setHasMore(true);
+    fetchFeed();
+  };
+
   const feedTabs = [
-    { value: 'following', label: 'Following', icon: Users },
     { value: 'trending', label: 'Trending', icon: TrendingUp },
-    { value: 'latest', label: 'Latest', icon: Rss },
+    { value: 'latest', label: 'Latest', icon: Sparkles },
+    { value: 'following', label: 'Following', icon: Users },
   ];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Feed type tabs */}
-      <motion.div
-        className="flex items-center gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit relative"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.35 }}
-      >
-        {feedTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => handleTabChange(tab.value)}
-            className={cn(
-              'relative flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors z-10',
-              feedType === tab.value
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            )}
-          >
-            {feedType === tab.value && (
-              <motion.div
-                className="absolute inset-0 bg-white dark:bg-gray-900 rounded-md shadow-sm"
-                layoutId="feed-tab-indicator"
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              />
-            )}
-            <span className="relative flex items-center gap-1.5">
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </span>
-          </button>
-        ))}
-      </motion.div>
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-6">
+      {/* Top bar: tabs + refresh */}
+      <div className="flex items-center justify-between mb-6">
+        <motion.div
+          className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg relative"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.35 }}
+        >
+          {feedTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handleTabChange(tab.value)}
+              className={cn(
+                'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors z-10',
+                feedType === tab.value
+                  ? 'text-gray-900 dark:text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              )}
+            >
+              {feedType === tab.value && (
+                <motion.div
+                  className="absolute inset-0 bg-white dark:bg-gray-900 rounded-md shadow-sm"
+                  layoutId="feed-tab-indicator"
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                />
+              )}
+              <span className="relative flex items-center gap-1.5">
+                <tab.icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </span>
+            </button>
+          ))}
+        </motion.div>
+
+        <motion.button
+          whileTap={{ scale: 0.9, rotate: 180 }}
+          onClick={handleRefresh}
+          disabled={loading}
+          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Refresh feed"
+        >
+          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+        </motion.button>
+      </div>
 
       {/* Feed content */}
       {loading ? (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {Array.from({ length: 4 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
@@ -169,9 +219,9 @@ function FeedPage() {
           <EmptyState
             icon={Users}
             title="Your feed is empty"
-            description="Follow some users to see their ideas in your feed, or explore what's trending."
+            description="Follow some users to see their ideas here, or discover what's trending right now."
             action={
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => handleTabChange('trending')}>
                   <TrendingUp className="h-4 w-4" /> View Trending
                 </Button>
@@ -186,14 +236,21 @@ function FeedPage() {
         ) : (
           <EmptyState
             icon={Rss}
-            title="No ideas found"
-            description="There are no ideas to show right now."
+            title="No ideas yet"
+            description="Be the first to share an idea! The community is waiting."
+            action={
+              <Link to="/ideas/new">
+                <Button>
+                  <Sparkles className="h-4 w-4" /> Share Your Idea
+                </Button>
+              </Link>
+            }
           />
         )
       ) : (
         <>
           <motion.div
-            className="space-y-6"
+            className="space-y-5"
             variants={staggerContainer}
             initial="initial"
             animate="animate"
@@ -206,16 +263,20 @@ function FeedPage() {
             ))}
           </motion.div>
 
-          {hasMore && (
-            <div className="mt-8 text-center">
-              <Button
-                variant="outline"
-                onClick={() => fetchFeed(true)}
-              >
-                Load More
-              </Button>
-            </div>
-          )}
+          {/* Infinite scroll trigger */}
+          <div ref={loadMoreTriggerRef} className="py-8 flex justify-center">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <Spinner size="sm" />
+                Loading more...
+              </div>
+            )}
+            {!hasMore && ideas.length > 0 && (
+              <p className="text-sm text-gray-400 dark:text-gray-500">
+                You've reached the end
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>

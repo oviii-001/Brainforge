@@ -37,14 +37,14 @@ import { cn } from '@/lib/utils';
 
 // Route-based page titles for the app topbar
 const PAGE_TITLES = {
-  '/dashboard': { title: 'Dashboard', subtitle: "Here's what's happening with your ideas" },
-  '/feed': { title: 'Your Feed', subtitle: 'Stay updated with ideas from people you follow' },
-  '/explore': { title: 'Explore Ideas', subtitle: 'Discover innovative ideas to collaborate on' },
+  '/dashboard': { title: 'Dashboard', subtitle: "Your ideas and stats" },
+  '/feed': { title: 'Feed', subtitle: 'See what the community is sharing' },
+  '/explore': { title: 'Explore', subtitle: 'Discover ideas to collaborate on' },
   '/messages': { title: 'Messages', subtitle: 'Your conversations' },
   '/notifications': { title: 'Notifications' },
-  '/bookmarks': { title: 'Bookmarks', subtitle: "Ideas you've saved for later" },
-  '/settings': { title: 'Settings', subtitle: 'Manage your profile and preferences' },
-  '/admin': { title: 'Admin Dashboard', subtitle: 'Manage users, content, and platform settings' },
+  '/bookmarks': { title: 'Bookmarks', subtitle: "Ideas you've saved" },
+  '/settings': { title: 'Settings', subtitle: 'Manage your account and preferences' },
+  '/admin': { title: 'Admin', subtitle: 'Manage users, content, and platform settings' },
   '/ideas/new': { title: 'Share Your Idea' },
 };
 
