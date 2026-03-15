@@ -161,7 +161,7 @@ function ConversationPage() {
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       <motion.div
         className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col"
-        style={{ height: 'calc(100vh - 140px)' }}
+        style={{ height: 'calc(100vh - 8rem)' }}
         initial={scaleIn.initial}
         animate={scaleIn.animate}
         transition={scaleIn.transition}

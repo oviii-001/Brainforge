@@ -35,7 +35,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-function Navbar() {
+function Navbar({ variant = 'marketing' }) {
+  const isApp = variant === 'app';
   const { user, userProfile, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -53,9 +54,9 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Listen for unread message count
+  // Listen for unread message count (only in marketing mode — app mode uses sidebar)
   useEffect(() => {
-    if (!user) {
+    if (isApp || !user) {
       setUnreadMessages(0);
       return;
     }
@@ -74,16 +75,14 @@ function Navbar() {
         }
       });
       setUnreadMessages(count);
-    }, () => {
-      // Silently ignore errors for badge count
-    });
+    }, () => {});
 
     return () => unsub();
-  }, [user]);
+  }, [user, isApp]);
 
-  // Listen for unread notifications count
+  // Listen for unread notifications count (only in marketing mode)
   useEffect(() => {
-    if (!user) {
+    if (isApp || !user) {
       setUnreadNotifications(0);
       return;
     }
@@ -95,12 +94,10 @@ function Navbar() {
 
     const unsub = onSnapshot(q, (snap) => {
       setUnreadNotifications(snap.size);
-    }, () => {
-      // Silently ignore errors for badge count
-    });
+    }, () => {});
 
     return () => unsub();
-  }, [user]);
+  }, [user, isApp]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -132,7 +129,10 @@ function Navbar() {
       'sticky top-0 z-40 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg transition-shadow duration-300',
       scrolled && 'shadow-md border-transparent dark:shadow-gray-900/50'
     )}>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className={cn(
+        'px-4 sm:px-6 lg:px-8',
+        isApp ? 'mx-auto' : 'mx-auto max-w-7xl'
+      )}>
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -158,24 +158,26 @@ function Navbar() {
             </div>
           </form>
 
-          {/* Nav links - desktop */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive(link.to)
-                    ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
-                )}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
-          </div>
+          {/* Nav links - desktop (marketing mode only) */}
+          {!isApp && (
+            <div className="hidden md:flex items-center gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive(link.to)
+                      ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
+                  )}
+                >
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Right side */}
           <div className="flex items-center gap-2">
@@ -195,46 +197,54 @@ function Navbar() {
 
             {user ? (
               <>
-                {/* Messages */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/messages"
-                      className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                      aria-label="Messages"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      {unreadMessages > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary-600 text-[10px] font-bold text-white">
-                          {unreadMessages > 9 ? '9+' : unreadMessages}
-                        </span>
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Messages</TooltipContent>
-                </Tooltip>
+                {/* Messages - marketing mode only (app mode has sidebar) */}
+                {!isApp && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/messages"
+                        className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                        aria-label="Messages"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {unreadMessages > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                            {unreadMessages > 9 ? '9+' : unreadMessages}
+                          </span>
+                        )}
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>Messages</TooltipContent>
+                  </Tooltip>
+                )}
 
-                {/* Notifications */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      to="/notifications"
-                      className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                      aria-label="Notifications"
-                    >
-                      <Bell className="h-4 w-4" />
-                      {unreadNotifications > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white">
-                          {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                        </span>
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>Notifications</TooltipContent>
-                </Tooltip>
+                {/* Notifications - marketing mode only */}
+                {!isApp && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to="/notifications"
+                        className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                        aria-label="Notifications"
+                      >
+                        <Bell className="h-4 w-4" />
+                        {unreadNotifications > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white">
+                            {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                          </span>
+                        )}
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>Notifications</TooltipContent>
+                  </Tooltip>
+                )}
 
-                {/* Create idea button */}
-                <Button size="sm" onClick={() => navigate('/ideas/new')} className="hidden sm:flex">
+                {/* Create idea button - hidden on small screens in app mode (sidebar has it) */}
+                <Button
+                  size="sm"
+                  onClick={() => navigate('/ideas/new')}
+                  className={cn('hidden sm:flex', isApp && 'hidden lg:flex')}
+                >
                   <Plus className="h-4 w-4" />
                   New Idea
                 </Button>
@@ -306,22 +316,38 @@ function Navbar() {
               </div>
             )}
 
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors md:hidden"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            {/* Mobile menu toggle - marketing mode only (app mode uses MobileNav) */}
+            {!isApp && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors md:hidden"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            )}
+
+            {/* Mobile search toggle - app mode only (small screens) */}
+            {isApp && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors md:hidden"
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu / search dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t bg-white dark:bg-gray-950 animate-slide-down">
+        <div className={cn(
+          'border-t bg-white dark:bg-gray-950 animate-slide-down',
+          isApp ? 'md:hidden' : 'md:hidden'
+        )}>
           <div className="px-4 py-3 space-y-3">
             {/* Mobile search */}
             <form onSubmit={handleSearch}>
@@ -337,74 +363,78 @@ function Navbar() {
               </div>
             </form>
 
-            {/* Mobile nav links */}
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-                  isActive(link.to)
-                    ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                )}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
-
-            {user ? (
+            {/* Marketing mode: show full mobile nav */}
+            {!isApp && (
               <>
-                <Link
-                  to="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Dashboard
-                </Link>
-                <Link
-                  to="/messages"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Messages
-                  {unreadMessages > 0 && (
-                    <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-primary-600 text-[10px] font-bold text-white">
-                      {unreadMessages}
-                    </span>
-                  )}
-                </Link>
-                <Link
-                  to="/notifications"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
-                  <Bell className="h-4 w-4" />
-                  Notifications
-                  {unreadNotifications > 0 && (
-                    <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      {unreadNotifications}
-                    </span>
-                  )}
-                </Link>
-                <Button className="w-full" onClick={() => { navigate('/ideas/new'); setMobileMenuOpen(false); }}>
-                  <Plus className="h-4 w-4" />
-                  New Idea
-                </Button>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                      isActive(link.to)
+                        ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20'
+                        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                    )}
+                  >
+                    <link.icon className="h-4 w-4" />
+                    {link.label}
+                  </Link>
+                ))}
+
+                {user ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/messages"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Messages
+                      {unreadMessages > 0 && (
+                        <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                          {unreadMessages}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                    >
+                      <Bell className="h-4 w-4" />
+                      Notifications
+                      {unreadNotifications > 0 && (
+                        <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {unreadNotifications}
+                        </span>
+                      )}
+                    </Link>
+                    <Button className="w-full" onClick={() => { navigate('/ideas/new'); setMobileMenuOpen(false); }}>
+                      <Plus className="h-4 w-4" />
+                      New Idea
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" className="flex-1" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>
+                      Sign In
+                    </Button>
+                    <Button className="flex-1" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>
+                      Get Started
+                    </Button>
+                  </div>
+                )}
               </>
-            ) : (
-              <div className="flex gap-2 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>
-                  Sign In
-                </Button>
-                <Button className="flex-1" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>
-                  Get Started
-                </Button>
-              </div>
             )}
           </div>
         </div>

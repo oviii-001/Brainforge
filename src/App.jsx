@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
+import AppLayout from '@/components/layout/AppLayout';
 import AuthLayout from '@/components/layout/AuthLayout';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AdminRoute from '@/components/common/AdminRoute';
@@ -41,48 +42,49 @@ function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public routes with main layout */}
+        {/* Marketing / public routes — with footer */}
         <Route element={<MainLayout />}>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/ideas/:id" element={<IdeaDetailPage />} />
-          <Route path="/profile/:id" element={<ProfilePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
         </Route>
 
-        {/* Auth routes */}
+        {/* Auth routes — standalone layout */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Route>
 
-        {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
+        {/* App routes — sidebar layout, no footer */}
+        <Route element={<AppLayout />}>
+          {/* Public app pages (accessible without auth) */}
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/ideas/:id" element={<IdeaDetailPage />} />
+          <Route path="/profile/:id" element={<ProfilePage />} />
+
+          {/* Protected app pages */}
+          <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/feed" element={<FeedPage />} />
             <Route path="/ideas/new" element={<CreateIdeaPage />} />
             <Route path="/ideas/:id/edit" element={<EditIdeaPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
-            <Route path="/feed" element={<FeedPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/messages/:id" element={<ConversationPage />} />
           </Route>
-        </Route>
 
-        {/* Admin routes */}
-        <Route element={<AdminRoute />}>
-          <Route element={<MainLayout />}>
+          {/* Admin pages */}
+          <Route element={<AdminRoute />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
         </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<MainLayout />}>
+        {/* 404 — marketing layout with footer */}
+        <Route element={<MainLayout />}>
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
