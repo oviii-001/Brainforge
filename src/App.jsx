@@ -20,6 +20,9 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const BookmarksPage = lazy(() => import('@/pages/BookmarksPage'));
+const FeedPage = lazy(() => import('@/pages/FeedPage'));
+const MessagesPage = lazy(() => import('@/pages/MessagesPage'));
+const ConversationPage = lazy(() => import('@/pages/ConversationPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
@@ -59,6 +62,9 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
+            <Route path="/feed" element={<FeedPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/messages/:id" element={<ConversationPage />} />
           </Route>
         </Route>
 

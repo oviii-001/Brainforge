@@ -13,9 +13,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import IdeaCard from '@/features/ideas/IdeaCard';
 import EmptyState from '@/components/common/EmptyState';
+import FollowButton from '@/features/follows/FollowButton';
+import FollowersList from '@/features/follows/FollowersList';
 import {
   MapPin, Globe, Github, Linkedin, Calendar, Lightbulb, Users,
-  Star, Settings, ExternalLink,
+  Star, Settings, ExternalLink, MessageCircle,
 } from 'lucide-react';
 import { formatDate, formatCount, cn } from '@/lib/utils';
 
@@ -27,6 +29,8 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [ideas, setIdeas] = useState([]);
   const [ideasLoading, setIdeasLoading] = useState(true);
+  const [followersOpen, setFollowersOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
 
   const isOwnProfile = user && user.uid === id;
 
@@ -101,12 +105,24 @@ function ProfilePage() {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {profile.displayName}
                 </h1>
-                {isOwnProfile && (
+                {isOwnProfile ? (
                   <Link to="/settings">
                     <Button variant="outline" size="sm">
                       <Settings className="h-3.5 w-3.5" /> Edit Profile
                     </Button>
                   </Link>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <FollowButton
+                      targetUserId={id}
+                      targetUserName={profile.displayName}
+                    />
+                    <Link to={`/messages?user=${id}`}>
+                      <Button variant="outline" size="sm">
+                        <MessageCircle className="h-3.5 w-3.5" /> Message
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
 
@@ -152,10 +168,14 @@ function ProfilePage() {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(profile.ideasCount || 0)}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Ideas</p>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(profile.collaborationsCount || 0)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Collabs</p>
-              </div>
+              <button onClick={() => setFollowersOpen(true)} className="text-left sm:text-right hover:opacity-80 transition-opacity">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(profile.followersCount || 0)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Followers</p>
+              </button>
+              <button onClick={() => setFollowingOpen(true)} className="text-left sm:text-right hover:opacity-80 transition-opacity">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(profile.followingCount || 0)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Following</p>
+              </button>
               <div>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(profile.reputation || 0)}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Reputation</p>
@@ -212,6 +232,20 @@ function ProfilePage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Followers/Following modals */}
+      <FollowersList
+        userId={id}
+        type="followers"
+        open={followersOpen}
+        onOpenChange={setFollowersOpen}
+      />
+      <FollowersList
+        userId={id}
+        type="following"
+        open={followingOpen}
+        onOpenChange={setFollowingOpen}
+      />
     </div>
   );
 }

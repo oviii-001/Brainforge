@@ -53,3 +53,5 @@ export const MAX_IDEA_DESCRIPTION_LENGTH = 5000;
 export const MAX_COMMENT_LENGTH = 2000;
 export const MAX_BIO_LENGTH = 500;
 export const IDEAS_PER_PAGE = 12;
+export const FEED_PER_PAGE = 12;
+export const MESSAGES_PER_PAGE = 50;

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Avatar from '@/components/ui/Avatar';
@@ -27,6 +29,8 @@ import {
   LogOut,
   Shield,
   Lightbulb,
+  Rss,
+  MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +41,35 @@ function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  // Listen for unread message count
+  useEffect(() => {
+    if (!user) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'conversations'),
+      where('participants', 'array-contains', user.uid)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      let count = 0;
+      snap.docs.forEach((d) => {
+        const data = d.data();
+        if (data.lastSenderId && data.lastSenderId !== user.uid && !data.readBy?.[user.uid]) {
+          count++;
+        }
+      });
+      setUnreadMessages(count);
+    }, () => {
+      // Silently ignore errors for badge count
+    });
+
+    return () => unsub();
+  }, [user]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -58,6 +91,7 @@ function Navbar() {
 
   const navLinks = [
     { to: '/explore', label: 'Explore', icon: Compass },
+    { to: '/feed', label: 'Feed', icon: Rss },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -122,6 +156,19 @@ function Navbar() {
 
             {user ? (
               <>
+                {/* Messages */}
+                <Link
+                  to="/messages"
+                  className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Notifications */}
                 <Link
                   to="/notifications"
@@ -259,6 +306,19 @@ function Navbar() {
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
+                </Link>
+                <Link
+                  to="/messages"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Messages
+                  {unreadMessages > 0 && (
+                    <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                      {unreadMessages}
+                    </span>
+                  )}
                 </Link>
                 <Button className="w-full" onClick={() => { navigate('/ideas/new'); setMobileMenuOpen(false); }}>
                   <Plus className="h-4 w-4" />

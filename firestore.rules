@@ -44,6 +44,22 @@ service cloud.firestore {
         allow create: if isAuthenticated();
         allow delete: if isOwner(userId);
       }
+
+      // ─── User's following subcollection ─────────────────────
+      match /following/{targetId} {
+        // Anyone can read (to show following list)
+        allow read: if true;
+        // Only the user can manage their own following list
+        allow create, delete: if isOwner(userId);
+      }
+
+      // ─── User's followers subcollection ─────────────────────
+      match /followers/{followerId} {
+        // Anyone can read (to show followers list)
+        allow read: if true;
+        // Any authenticated user can add/remove themselves as a follower
+        allow create, delete: if isAuthenticated();
+      }
     }
 
     // ─── Ideas ──────────────────────────────────────────────────
@@ -92,6 +108,38 @@ service cloud.firestore {
         // Only authenticated users can add team members (idea owner adds on create / accept)
         allow create, update: if isAuthenticated();
         allow delete: if isAuthenticated();
+      }
+    }
+
+    // ─── Conversations (Direct Messaging) ────────────────────
+    match /conversations/{conversationId} {
+      // Only participants can read the conversation
+      allow read: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+
+      // Authenticated users can create conversations (must include self as participant)
+      allow create: if isAuthenticated()
+        && request.auth.uid in request.resource.data.participants;
+
+      // Only participants can update (send messages updates lastMessage, readBy, etc.)
+      allow update: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+
+      // Conversations should not be deleted from client
+      allow delete: if false;
+
+      // ─── Messages subcollection ────────────────────────────
+      match /messages/{messageId} {
+        // Only conversation participants can read messages
+        allow read: if isAuthenticated()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
+        // Only conversation participants can create messages
+        allow create: if isAuthenticated()
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+
+        // Messages should not be updated or deleted
+        allow update, delete: if false;
       }
     }
   }
