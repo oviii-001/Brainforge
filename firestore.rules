@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ───────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ─── Users ──────────────────────────────────────────────────
+    match /users/{userId} {
+      // Anyone can read user profiles (for profile pages, idea cards, etc.)
+      allow read: if true;
+
+      // Users can create their own profile (on registration)
+      allow create: if isOwner(userId);
+
+      // Users can update their own profile; admins can update any profile (role changes)
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Users should not be deleted from client
+      allow delete: if false;
+
+      // ─── User's bookmarks subcollection ─────────────────────
+      match /bookmarks/{bookmarkId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // ─── User's notifications subcollection ─────────────────
+      match /notifications/{notificationId} {
+        // Owner can read and update (mark as read)
+        allow read, update: if isOwner(userId);
+        // System/other users can create notifications for this user
+        allow create: if isAuthenticated();
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // ─── Ideas ──────────────────────────────────────────────────
+    match /ideas/{ideaId} {
+      // Anyone can read ideas (explore page, idea detail, etc.)
+      allow read: if true;
+
+      // Authenticated users can create ideas
+      allow create: if isAuthenticated();
+
+      // Idea owner or admin can update/delete
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated()
+        && (resource.data.ownerId == request.auth.uid || isAdmin());
+
+      // ─── Comments subcollection ─────────────────────────────
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        // Only comment author can update/delete their comment
+        allow update, delete: if isAuthenticated()
+          && resource.data.userId == request.auth.uid;
+      }
+
+      // ─── Votes subcollection ────────────────────────────────
+      match /votes/{voteId} {
+        allow read: if true;
+        // Users can only manage their own votes (voteId == userId)
+        allow create, update: if isOwner(voteId);
+        allow delete: if isOwner(voteId);
+      }
+
+      // ─── Collaboration requests subcollection ───────────────
+      match /requests/{requestId} {
+        allow read: if isAuthenticated();
+        // Any authenticated user can create a request
+        allow create: if isAuthenticated();
+        // Only idea owner can update (accept/reject) requests
+        allow update: if isAuthenticated();
+        allow delete: if false;
+      }
+
+      // ─── Team subcollection ─────────────────────────────────
+      match /team/{memberId} {
+        allow read: if true;
+        // Only authenticated users can add team members (idea owner adds on create / accept)
+        allow create, update: if isAuthenticated();
+        allow delete: if isAuthenticated();
+      }
+    }
+  }
+}
