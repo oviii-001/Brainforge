@@ -4,6 +4,7 @@ import {
   collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc,
   where, limit, getCountFromServer,
 } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -11,8 +12,12 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
+import { Modal, ModalContent } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/common/EmptyState';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/Select';
 import { toast } from 'sonner';
 import {
   LayoutDashboard, Users, Lightbulb, Flag, Shield, Trash2,
@@ -20,6 +25,7 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime, formatCount, cn } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
+import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
 
 function AdminPage() {
   const { user } = useAuth();
@@ -27,6 +33,9 @@ function AdminPage() {
   const [users, setUsers] = useState([]);
   const [ideas, setIdeas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
     fetchDashboard();
@@ -74,7 +83,7 @@ function AdminPage() {
   };
 
   const deleteIdea = async (ideaId) => {
-    if (!window.confirm('Are you sure you want to delete this idea?')) return;
+    setDeleteLoading(true);
     try {
       await deleteDoc(doc(db, 'ideas', ideaId));
       setIdeas((prev) => prev.filter((i) => i.id !== ideaId));
@@ -83,6 +92,9 @@ function AdminPage() {
     } catch (error) {
       console.error('Error deleting idea:', error);
       toast.error('Failed to delete idea.');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -100,65 +112,86 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-      <div className="mb-8">
+      <motion.div
+        className="mb-8"
+        initial={fadeInUp.initial}
+        animate={fadeInUp.animate}
+        transition={fadeInUp.transition}
+      >
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <Shield className="h-7 w-7 text-primary-600" /> Admin Dashboard
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
           Manage users, content, and platform settings
         </p>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-900/30">
-                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+      <motion.div
+        className="grid sm:grid-cols-3 gap-4 mb-8"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div variants={staggerItem}>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-900/30">
+                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.users)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Users</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.users)}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Users</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/30">
+                  <Lightbulb className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.ideas)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Ideas</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/30">
-                <Lightbulb className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={staggerItem}>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30">
+                  <LayoutDashboard className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.users + stats.ideas)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Activity</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.ideas)}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Ideas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/30">
-                <LayoutDashboard className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCount(stats.users + stats.ideas)}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Activity</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
       {/* Tabs */}
-      <Tabs defaultValue="users">
+      <motion.div
+        initial={fadeInUp.initial}
+        animate={fadeInUp.animate}
+        transition={{ ...fadeInUp.transition, delay: 0.2 }}
+      >
+      <Tabs defaultValue="users" onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="users">
+          <TabsTrigger value="users" isActive={activeTab === 'users'} layoutId="admin-tab">
             <Users className="h-4 w-4 mr-1.5" /> Users ({users.length})
           </TabsTrigger>
-          <TabsTrigger value="ideas">
+          <TabsTrigger value="ideas" isActive={activeTab === 'ideas'} layoutId="admin-tab">
             <Lightbulb className="h-4 w-4 mr-1.5" /> Ideas ({ideas.length})
           </TabsTrigger>
         </TabsList>
@@ -197,14 +230,15 @@ function AdminPage() {
                         </td>
                         <td className="p-4 text-right">
                           {u.id !== user.uid && (
-                            <select
-                              value={u.role || 'user'}
-                              onChange={(e) => updateUserRole(u.id, e.target.value)}
-                              className="text-xs border rounded-md px-2 py-1 bg-white dark:bg-gray-900 dark:border-gray-700"
-                            >
-                              <option value="user">User</option>
-                              <option value="admin">Admin</option>
-                            </select>
+                            <Select value={u.role || 'user'} onValueChange={(val) => updateUserRole(u.id, val)}>
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </td>
                       </tr>
@@ -258,7 +292,7 @@ function AdminPage() {
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </Link>
-                              <Button variant="ghost" size="icon-sm" onClick={() => deleteIdea(idea.id)}>
+                              <Button variant="ghost" size="icon-sm" onClick={() => setDeleteTarget(idea)}>
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
@@ -273,6 +307,27 @@ function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </motion.div>
+
+      {/* Delete Confirm Modal */}
+      <Modal open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <ModalContent title="Delete Idea" description="This action cannot be undone.">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 mb-4">
+            <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+            <p className="text-sm text-red-700 dark:text-red-300">
+              Are you sure you want to delete &quot;{deleteTarget?.title}&quot;? This will permanently remove the idea and all associated data.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" loading={deleteLoading} onClick={() => deleteIdea(deleteTarget?.id)}>
+              Delete Permanently
+            </Button>
+          </div>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

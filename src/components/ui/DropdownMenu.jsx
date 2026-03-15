@@ -1,9 +1,22 @@
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 function DropdownMenu({ children, ...props }) {
-  return <DropdownMenuPrimitive.Root {...props}>{children}</DropdownMenuPrimitive.Root>;
+  const [open, setOpen] = useState(false);
+  return (
+    <DropdownMenuContext.Provider value={{ open }}>
+      <DropdownMenuPrimitive.Root open={open} onOpenChange={setOpen} {...props}>
+        {children}
+      </DropdownMenuPrimitive.Root>
+    </DropdownMenuContext.Provider>
+  );
 }
+
+// Internal context for open state
+import { createContext, useContext } from 'react';
+const DropdownMenuContext = createContext({ open: false });
 
 function DropdownMenuTrigger({ children, ...props }) {
   return (
@@ -14,21 +27,34 @@ function DropdownMenuTrigger({ children, ...props }) {
 }
 
 function DropdownMenuContent({ className, children, sideOffset = 8, align = 'end', ...props }) {
+  const { open } = useContext(DropdownMenuContext);
+
   return (
-    <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.Content
-        sideOffset={sideOffset}
-        align={align}
-        className={cn(
-          'z-50 min-w-[180px] overflow-hidden rounded-xl border bg-white p-1.5 shadow-lg dark:bg-gray-900',
-          'data-[state=open]:animate-slide-down',
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </DropdownMenuPrimitive.Content>
-    </DropdownMenuPrimitive.Portal>
+    <AnimatePresence>
+      {open && (
+        <DropdownMenuPrimitive.Portal forceMount>
+          <DropdownMenuPrimitive.Content
+            sideOffset={sideOffset}
+            align={align}
+            asChild
+            {...props}
+          >
+            <motion.div
+              className={cn(
+                'z-50 min-w-[180px] overflow-hidden rounded-xl border bg-white p-1.5 shadow-lg dark:bg-gray-900',
+                className
+              )}
+              initial={{ opacity: 0, scale: 0.95, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -4 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+            >
+              {children}
+            </motion.div>
+          </DropdownMenuPrimitive.Content>
+        </DropdownMenuPrimitive.Portal>
+      )}
+    </AnimatePresence>
   );
 }
 

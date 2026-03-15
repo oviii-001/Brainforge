@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   collection, query, where, orderBy, getDocs, doc, updateDoc, writeBatch,
 } from 'firebase/firestore';
@@ -11,18 +12,20 @@ import Badge from '@/components/ui/Badge';
 import Avatar from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/common/EmptyState';
+import { cn, formatRelativeTime } from '@/lib/utils';
+import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
+import { toast } from 'sonner';
 import {
   Bell, BellOff, Check, CheckCheck, MessageSquare, Users,
-  ArrowUpCircle, Lightbulb, Trash2,
+  ArrowUpCircle, Lightbulb, Trash2, UserPlus,
 } from 'lucide-react';
-import { formatRelativeTime, cn } from '@/lib/utils';
-import { toast } from 'sonner';
 
 const NOTIFICATION_ICONS = {
   comment: MessageSquare,
   collaboration: Users,
   vote: ArrowUpCircle,
   idea: Lightbulb,
+  follow: UserPlus,
   default: Bell,
 };
 
@@ -89,7 +92,12 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <motion.div
+        className="flex items-center justify-between mb-8"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Notifications
@@ -103,10 +111,15 @@ function NotificationsPage() {
             <CheckCheck className="h-4 w-4" /> Mark all read
           </Button>
         )}
-      </div>
+      </motion.div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-2 mb-6">
+      <motion.div
+        className="flex items-center gap-2 mb-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+      >
         <button
           onClick={() => setFilter('all')}
           className={cn(
@@ -129,7 +142,7 @@ function NotificationsPage() {
         >
           Unread ({unreadCount})
         </button>
-      </div>
+      </motion.div>
 
       {/* Notifications list */}
       {loading ? (
@@ -139,56 +152,63 @@ function NotificationsPage() {
           ))}
         </div>
       ) : filteredNotifications.length > 0 ? (
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-2"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
           {filteredNotifications.map((notification) => {
             const IconComp = NOTIFICATION_ICONS[notification.type] || NOTIFICATION_ICONS.default;
             return (
-              <Card
-                key={notification.id}
-                className={cn(
-                  'transition-colors',
-                  !notification.read && 'border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/20'
-                )}
-              >
-                <CardContent className="p-4 flex items-start gap-3">
-                  <div className={cn(
-                    'flex items-center justify-center h-9 w-9 rounded-full shrink-0',
-                    !notification.read ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
-                  )}>
-                    <IconComp className="h-4 w-4" />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {notification.link ? (
-                      <Link
-                        to={notification.link}
-                        onClick={() => !notification.read && markAsRead(notification.id)}
-                        className="text-sm text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400"
-                      >
-                        {notification.message}
-                      </Link>
-                    ) : (
-                      <p className="text-sm text-gray-900 dark:text-white">{notification.message}</p>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      {formatRelativeTime(notification.createdAt)}
-                    </p>
-                  </div>
-
-                  {!notification.read && (
-                    <button
-                      onClick={() => markAsRead(notification.id)}
-                      className="shrink-0 p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      title="Mark as read"
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
+              <motion.div key={notification.id} variants={staggerItem}>
+                <Card
+                  className={cn(
+                    'transition-colors',
+                    !notification.read && 'border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-950/20'
                   )}
-                </CardContent>
-              </Card>
+                >
+                  <CardContent className="p-4 flex items-start gap-3">
+                    <div className={cn(
+                      'flex items-center justify-center h-9 w-9 rounded-full shrink-0',
+                      !notification.read ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                    )}>
+                      <IconComp className="h-4 w-4" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      {notification.link ? (
+                        <Link
+                          to={notification.link}
+                          onClick={() => !notification.read && markAsRead(notification.id)}
+                          className="text-sm text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400"
+                        >
+                          {notification.message}
+                        </Link>
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-white">{notification.message}</p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        {formatRelativeTime(notification.createdAt)}
+                      </p>
+                    </div>
+
+                    {!notification.read && (
+                      <button
+                        onClick={() => markAsRead(notification.id)}
+                        className="shrink-0 p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        title="Mark as read"
+                        aria-label="Mark as read"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       ) : (
         <EmptyState
           icon={BellOff}

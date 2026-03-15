@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import Avatar from '@/components/ui/Avatar';
 import Button from '@/components/ui/Button';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/Tooltip';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,6 +43,15 @@ function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Shadow-on-scroll effect
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Listen for unread message count
   useEffect(() => {
@@ -64,6 +74,27 @@ function Navbar() {
         }
       });
       setUnreadMessages(count);
+    }, () => {
+      // Silently ignore errors for badge count
+    });
+
+    return () => unsub();
+  }, [user]);
+
+  // Listen for unread notifications count
+  useEffect(() => {
+    if (!user) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'users', user.uid, 'notifications'),
+      where('read', '==', false)
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      setUnreadNotifications(snap.size);
     }, () => {
       // Silently ignore errors for badge count
     });
@@ -97,7 +128,10 @@ function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-40 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg">
+    <nav className={cn(
+      'sticky top-0 z-40 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg transition-shadow duration-300',
+      scrolled && 'shadow-md border-transparent dark:shadow-gray-900/50'
+    )}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
@@ -146,36 +180,58 @@ function Navbar() {
           {/* Right side */}
           <div className="flex items-center gap-2">
             {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                  aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+                >
+                  {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{theme === 'light' ? 'Dark mode' : 'Light mode'}</TooltipContent>
+            </Tooltip>
 
             {user ? (
               <>
                 {/* Messages */}
-                <Link
-                  to="/messages"
-                  className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  {unreadMessages > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary-600 text-[10px] font-bold text-white">
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
-                    </span>
-                  )}
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/messages"
+                      className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Messages"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {unreadMessages > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                          {unreadMessages > 9 ? '9+' : unreadMessages}
+                        </span>
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>Messages</TooltipContent>
+                </Tooltip>
 
                 {/* Notifications */}
-                <Link
-                  to="/notifications"
-                  className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <Bell className="h-4 w-4" />
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/notifications"
+                      className="relative flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+                      aria-label="Notifications"
+                    >
+                      <Bell className="h-4 w-4" />
+                      {unreadNotifications > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center h-4 min-w-[16px] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white">
+                          {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                        </span>
+                      )}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>Notifications</TooltipContent>
+                </Tooltip>
 
                 {/* Create idea button */}
                 <Button size="sm" onClick={() => navigate('/ideas/new')} className="hidden sm:flex">
@@ -254,6 +310,8 @@ function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="flex items-center justify-center h-9 w-9 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors md:hidden"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -317,6 +375,19 @@ function Navbar() {
                   {unreadMessages > 0 && (
                     <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-primary-600 text-[10px] font-bold text-white">
                       {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  to="/notifications"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  <Bell className="h-4 w-4" />
+                  Notifications
+                  {unreadNotifications > 0 && (
+                    <span className="ml-auto flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadNotifications}
                     </span>
                   )}
                 </Link>

@@ -1,6 +1,8 @@
 import { forwardRef } from 'react';
+import { motion } from 'framer-motion';
 import { Slot } from '@radix-ui/react-slot';
 import { cn } from '@/lib/utils';
+import { tapScale } from '@/lib/animations';
 
 const buttonVariants = {
   variant: {
@@ -31,7 +33,12 @@ const Button = forwardRef(({
   children,
   ...props
 }, ref) => {
-  const Comp = asChild ? Slot : 'button';
+  // When using asChild (Slot), we can't use motion.button
+  const Comp = asChild ? Slot : motion.button;
+
+  const motionProps = asChild ? {} : {
+    whileTap: disabled || loading ? undefined : tapScale,
+  };
 
   return (
     <Comp
@@ -43,6 +50,7 @@ const Button = forwardRef(({
         className
       )}
       disabled={disabled || loading}
+      {...motionProps}
       {...props}
     >
       {loading && (

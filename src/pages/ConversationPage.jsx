@@ -4,6 +4,7 @@ import {
   doc, getDoc, collection, query, orderBy, onSnapshot,
   addDoc, updateDoc, serverTimestamp, limit, startAfter, getDocs,
 } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import MessageThread from '@/features/messaging/MessageThread';
@@ -12,6 +13,7 @@ import Avatar from '@/components/ui/Avatar';
 import Spinner from '@/components/ui/Spinner';
 import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { fadeInUp, scaleIn } from '@/lib/animations';
 
 const MESSAGES_PER_PAGE = 50;
 
@@ -157,9 +159,20 @@ function ConversationPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
+      <motion.div
+        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 flex flex-col"
+        style={{ height: 'calc(100vh - 140px)' }}
+        initial={scaleIn.initial}
+        animate={scaleIn.animate}
+        transition={scaleIn.transition}
+      >
         {/* Conversation header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b dark:border-gray-800 shrink-0">
+        <motion.div
+          className="flex items-center gap-3 px-4 py-3 border-b dark:border-gray-800 shrink-0"
+          initial={fadeInUp.initial}
+          animate={fadeInUp.animate}
+          transition={{ ...fadeInUp.transition, delay: 0.1 }}
+        >
           <button
             onClick={() => navigate('/messages')}
             className="flex items-center justify-center h-8 w-8 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
@@ -178,7 +191,7 @@ function ConversationPage() {
               </p>
             </div>
           </Link>
-        </div>
+        </motion.div>
 
         {/* Messages area */}
         <MessageThread
@@ -189,7 +202,7 @@ function ConversationPage() {
 
         {/* Input area */}
         <MessageInput onSend={handleSendMessage} />
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -24,6 +24,9 @@ const FeedPage = lazy(() => import('@/pages/FeedPage'));
 const MessagesPage = lazy(() => import('@/pages/MessagesPage'));
 const ConversationPage = lazy(() => import('@/pages/ConversationPage'));
 const AdminPage = lazy(() => import('@/pages/AdminPage'));
+const AboutPage = lazy(() => import('@/pages/AboutPage'));
+const ContactPage = lazy(() => import('@/pages/ContactPage'));
+const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 function PageLoader() {
@@ -44,6 +47,9 @@ function App() {
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/ideas/:id" element={<IdeaDetailPage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Route>
 
         {/* Auth routes */}

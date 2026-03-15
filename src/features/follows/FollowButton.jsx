@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import { UserPlus, UserMinus } from 'lucide-react';
 import { toast } from 'sonner';
+import { createNotification } from '@/lib/notifications';
 
 function FollowButton({ targetUserId, targetUserName, size = 'sm', className = '' }) {
   const { user, userProfile } = useAuth();
@@ -76,6 +77,12 @@ function FollowButton({ targetUserId, targetUserName, size = 'sm', className = '
         await updateDoc(targetUserRef, { followersCount: increment(1) });
         setIsFollowing(true);
         toast.success(`Following ${targetUserName}`);
+
+        // Notify the target user
+        createNotification(targetUserId, 'follow', {
+          message: `${userProfile?.displayName || 'Someone'} started following you.`,
+          link: `/profile/${user.uid}`,
+        });
       }
     } catch (error) {
       console.error('Error toggling follow:', error);

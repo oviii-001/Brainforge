@@ -1,10 +1,12 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-const Textarea = forwardRef(({ className, error, ...props }, ref) => {
+const Textarea = forwardRef(({ className, error, errorId, ...props }, ref) => {
   return (
     <textarea
       ref={ref}
+      aria-invalid={error ? 'true' : undefined}
+      aria-describedby={error && errorId ? errorId : undefined}
       className={cn(
         'flex min-h-[100px] w-full rounded-lg border bg-white px-3 py-2 text-sm transition-colors resize-y',
         'placeholder:text-gray-400 dark:placeholder:text-gray-500',

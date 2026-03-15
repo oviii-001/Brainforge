@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime, formatDate, formatCount, cn } from '@/lib/utils';
 import { CATEGORIES, IDEA_STATUSES, MAX_COMMENT_LENGTH } from '@/lib/constants';
+import { createNotification } from '@/lib/notifications';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem, scrollReveal } from '@/lib/animations';
 
 function IdeaDetailPage() {
   const { id } = useParams();
@@ -200,6 +203,14 @@ function IdeaDetailPage() {
           return newIdea;
         });
         setUserVote(type);
+
+        // Notify idea owner about upvote (not downvote, and not yourself)
+        if (type === 'up' && idea.ownerId && idea.ownerId !== user.uid) {
+          createNotification(idea.ownerId, 'vote', {
+            message: `${userProfile?.displayName || 'Someone'} upvoted your idea "${idea.title}".`,
+            link: `/ideas/${id}`,
+          });
+        }
       }
     } catch (error) {
       console.error('Error voting:', error);
@@ -274,6 +285,14 @@ function IdeaDetailPage() {
 
       setIdea((prev) => ({ ...prev, commentsCount: (prev.commentsCount || 0) + 1 }));
 
+      // Notify the idea owner about the new comment (don't notify yourself)
+      if (idea.ownerId && idea.ownerId !== user.uid) {
+        createNotification(idea.ownerId, 'comment', {
+          message: `${userProfile?.displayName || 'Someone'} commented on your idea "${idea.title}".`,
+          link: `/ideas/${id}#comments`,
+        });
+      }
+
       if (parentId) {
         setReplyText('');
         setReplyTo(null);
@@ -324,6 +343,14 @@ function IdeaDetailPage() {
       setShowCollabModal(false);
       setCollabMessage('');
       toast.success('Collaboration request sent!');
+
+      // Notify the idea owner about the collab request
+      if (idea.ownerId && idea.ownerId !== user.uid) {
+        createNotification(idea.ownerId, 'collaboration', {
+          message: `${userProfile?.displayName || 'Someone'} requested to collaborate on "${idea.title}".`,
+          link: `/dashboard`,
+        });
+      }
     } catch (error) {
       console.error('Error sending collab request:', error);
       toast.error('Failed to send request.');
@@ -402,17 +429,20 @@ function IdeaDetailPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
       {/* Back button */}
-      <button
+      <motion.button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-6"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
       >
         <ArrowLeft className="h-4 w-4" /> Back
-      </button>
+      </motion.button>
 
       {/* Main Content */}
       <article>
         {/* Header */}
-        <div className="mb-6">
+        <motion.div className="mb-6" {...fadeInUp}>
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {category && (
               <Badge variant="secondary">{category.name}</Badge>
@@ -444,15 +474,21 @@ function IdeaDetailPage() {
               {formatCount(idea.viewsCount || 0)} views
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* Action bar */}
-        <div className="flex flex-wrap items-center gap-2 mb-8 pb-6 border-b dark:border-gray-800">
+        <motion.div
+          className="flex flex-wrap items-center gap-2 mb-8 pb-6 border-b dark:border-gray-800"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15, duration: 0.35 }}
+        >
           {/* Votes */}
           <div className="flex items-center gap-1 rounded-lg border dark:border-gray-700 overflow-hidden">
-            <button
+            <motion.button
               onClick={() => handleVote('up')}
               disabled={voteLoading}
+              whileTap={{ scale: 0.92 }}
               className={cn(
                 'flex items-center gap-1 px-3 py-2 text-sm transition-colors',
                 userVote === 'up'
@@ -462,11 +498,12 @@ function IdeaDetailPage() {
             >
               <ArrowUpCircle className="h-4 w-4" />
               <span>{formatCount(idea.upvotes || 0)}</span>
-            </button>
+            </motion.button>
             <span className="font-semibold text-sm text-gray-700 dark:text-gray-300 px-2">{netVotes}</span>
-            <button
+            <motion.button
               onClick={() => handleVote('down')}
               disabled={voteLoading}
+              whileTap={{ scale: 0.92 }}
               className={cn(
                 'flex items-center gap-1 px-3 py-2 text-sm transition-colors',
                 userVote === 'down'
@@ -476,7 +513,7 @@ function IdeaDetailPage() {
             >
               <ArrowDownCircle className="h-4 w-4" />
               <span>{formatCount(idea.downvotes || 0)}</span>
-            </button>
+            </motion.button>
           </div>
 
           {/* Bookmark */}
@@ -530,26 +567,32 @@ function IdeaDetailPage() {
               </Button>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Summary */}
-        <div className="mb-8">
+        <motion.div
+          className="mb-8"
+          {...scrollReveal}
+        >
           <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
             {idea.summary}
           </p>
-        </div>
+        </motion.div>
 
         {/* Description */}
-        <div className="mb-8">
+        <motion.div
+          className="mb-8"
+          {...scrollReveal}
+        >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h2>
           <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
             {idea.description}
           </div>
-        </div>
+        </motion.div>
 
         {/* Tags */}
         {idea.tags && idea.tags.length > 0 && (
-          <div className="mb-8">
+          <motion.div className="mb-8" {...scrollReveal}>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Tag className="h-4 w-4" /> Tags
             </h3>
@@ -564,12 +607,12 @@ function IdeaDetailPage() {
                 </Link>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Skills Needed */}
         {idea.skillsNeeded && idea.skillsNeeded.length > 0 && (
-          <div className="mb-8">
+          <motion.div className="mb-8" {...scrollReveal}>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
               <Briefcase className="h-4 w-4" /> Skills Needed
             </h3>
@@ -578,11 +621,11 @@ function IdeaDetailPage() {
                 <Badge key={skill} variant="default">{skill}</Badge>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Team Section */}
-        <div className="mb-8">
+        <motion.div className="mb-8" {...scrollReveal}>
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -604,39 +647,45 @@ function IdeaDetailPage() {
               </div>
 
               {team.length > 0 ? (
-                <div className="space-y-3">
+                <motion.div
+                  className="space-y-3"
+                  variants={staggerContainer}
+                  initial="initial"
+                  animate="animate"
+                >
                   {team.map((member) => (
-                    <Link
-                      key={member.id}
-                      to={`/profile/${member.userId}`}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                      <Avatar src={member.userPhotoURL} name={member.userName} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {member.userName}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{member.role}</p>
-                      </div>
-                      {member.skills && member.skills.length > 0 && (
-                        <div className="hidden sm:flex gap-1">
-                          {member.skills.slice(0, 2).map((s) => (
-                            <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
-                          ))}
+                    <motion.div key={member.id} variants={staggerItem}>
+                      <Link
+                        to={`/profile/${member.userId}`}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <Avatar src={member.userPhotoURL} name={member.userName} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {member.userName}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{member.role}</p>
                         </div>
-                      )}
-                    </Link>
+                        {member.skills && member.skills.length > 0 && (
+                          <div className="hidden sm:flex gap-1">
+                            {member.skills.slice(0, 2).map((s) => (
+                              <Badge key={s} variant="secondary" className="text-[10px]">{s}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </Link>
+                    </motion.div>
                   ))}
-                </div>
+                </motion.div>
               ) : (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No team members yet.</p>
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
         {/* Comments Section */}
-        <div className="mb-8" id="comments">
+        <motion.div className="mb-8" id="comments" {...scrollReveal}>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <MessageSquare className="h-5 w-5" /> Comments ({idea.commentsCount || 0})
           </h2>
@@ -688,36 +737,42 @@ function IdeaDetailPage() {
               ))}
             </div>
           ) : topLevelComments.length > 0 ? (
-            <div className="space-y-4">
+            <motion.div
+              className="space-y-4"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
               {topLevelComments.map((comment) => {
                 const replies = getReplies(comment.id);
                 const showReplies = expandedReplies[comment.id];
                 return (
-                  <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    replies={replies}
-                    showReplies={showReplies}
-                    toggleReplies={toggleReplies}
-                    replyTo={replyTo}
-                    setReplyTo={setReplyTo}
-                    replyText={replyText}
-                    setReplyText={setReplyText}
-                    handleSubmitComment={handleSubmitComment}
-                    handleDeleteComment={handleDeleteComment}
-                    commentSubmitting={commentSubmitting}
-                    user={user}
-                    userProfile={userProfile}
-                  />
+                  <motion.div key={comment.id} variants={staggerItem}>
+                    <CommentItem
+                      comment={comment}
+                      replies={replies}
+                      showReplies={showReplies}
+                      toggleReplies={toggleReplies}
+                      replyTo={replyTo}
+                      setReplyTo={setReplyTo}
+                      replyText={replyText}
+                      setReplyText={setReplyText}
+                      handleSubmitComment={handleSubmitComment}
+                      handleDeleteComment={handleDeleteComment}
+                      commentSubmitting={commentSubmitting}
+                      user={user}
+                      userProfile={userProfile}
+                    />
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
               No comments yet. Be the first to share your thoughts!
             </p>
           )}
-        </div>
+        </motion.div>
       </article>
 
       {/* Collab Request Modal */}

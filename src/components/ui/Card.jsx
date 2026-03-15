@@ -1,19 +1,32 @@
+import { forwardRef } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { hoverLift } from '@/lib/animations';
 
-function Card({ className, children, hover = false, ...props }) {
+const Card = forwardRef(({ className, children, hover = false, glow = false, ...props }, ref) => {
+  const Comp = hover ? motion.div : 'div';
+  const motionProps = hover
+    ? { whileHover: hoverLift, transition: { duration: 0.2 } }
+    : {};
+
   return (
-    <div
+    <Comp
+      ref={ref}
       className={cn(
-        'rounded-xl border bg-white dark:bg-gray-900 shadow-sm',
-        hover && 'transition-shadow hover:shadow-md cursor-pointer',
+        'rounded-xl border bg-white dark:bg-gray-900 shadow-sm transition-shadow',
+        hover && 'cursor-pointer hover:shadow-lg',
+        glow && 'hover:shadow-primary-500/20 hover:border-primary-300 dark:hover:border-primary-700',
         className
       )}
+      {...motionProps}
       {...props}
     >
       {children}
-    </div>
+    </Comp>
   );
-}
+});
+
+Card.displayName = 'Card';
 
 function CardHeader({ className, children, ...props }) {
   return (

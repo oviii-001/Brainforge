@@ -4,11 +4,15 @@ function Skeleton({ className, ...props }) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800',
+        'rounded-lg bg-gray-200 dark:bg-gray-800 relative overflow-hidden',
         className
       )}
+      role="status"
+      aria-label="Loading"
       {...props}
-    />
+    >
+      <div className="absolute inset-0 animate-shimmer" />
+    </div>
   );
 }
 

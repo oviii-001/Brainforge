@@ -24,9 +24,9 @@ function Footer() {
     {
       title: 'Resources',
       links: [
-        { label: 'About', to: '#' },
-        { label: 'Contact', to: '#' },
-        { label: 'Privacy Policy', to: '#' },
+        { label: 'About', to: '/about' },
+        { label: 'Contact', to: '/contact' },
+        { label: 'Privacy Policy', to: '/privacy' },
       ],
     },
   ];

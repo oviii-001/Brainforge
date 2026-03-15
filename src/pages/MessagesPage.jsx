@@ -4,6 +4,7 @@ import {
   collection, query, where, orderBy, onSnapshot, addDoc, getDocs,
   serverTimestamp, doc, getDoc,
 } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import ConversationList from '@/features/messaging/ConversationList';
@@ -14,6 +15,7 @@ import Button from '@/components/ui/Button';
 import { MessageCircle, ArrowRight, Plus, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
 
 function MessagesPage() {
   const { user, userProfile } = useAuth();
@@ -122,7 +124,12 @@ function MessagesPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <motion.div
+        className="flex items-center justify-between mb-6"
+        initial={fadeInUp.initial}
+        animate={fadeInUp.animate}
+        transition={fadeInUp.transition}
+      >
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             Messages
@@ -133,11 +140,16 @@ function MessagesPage() {
               : 'Your conversations'}
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* Search conversations */}
       {conversations.length > 0 && (
-        <div className="relative mb-4">
+        <motion.div
+          className="relative mb-4"
+          initial={fadeInUp.initial}
+          animate={fadeInUp.animate}
+          transition={{ ...fadeInUp.transition, delay: 0.1 }}
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
@@ -146,7 +158,7 @@ function MessagesPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-10 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
           />
-        </div>
+        </motion.div>
       )}
 
       {/* Content */}
@@ -182,13 +194,18 @@ function MessagesPage() {
           description="Try a different search term."
         />
       ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <motion.div
+          className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+          initial={fadeInUp.initial}
+          animate={fadeInUp.animate}
+          transition={{ ...fadeInUp.transition, delay: 0.15 }}
+        >
           <ConversationList
             conversations={filteredConversations}
             activeId={null}
             currentUserId={user.uid}
           />
-        </div>
+        </motion.div>
       )}
     </div>
   );

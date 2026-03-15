@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -13,7 +14,11 @@ import Badge from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 import { ArrowLeft, X, Save } from 'lucide-react';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/Select';
 import { CATEGORIES, SKILLS, IDEA_STATUSES, MAX_IDEA_TITLE_LENGTH, MAX_IDEA_SUMMARY_LENGTH, MAX_IDEA_DESCRIPTION_LENGTH } from '@/lib/constants';
+import { fadeInUp, slideInLeft } from '@/lib/animations';
 
 function EditIdeaPage() {
   const { id } = useParams();
@@ -34,6 +39,7 @@ function EditIdeaPage() {
     formState: { errors },
     watch,
     reset,
+    control,
   } = useForm();
 
   const titleLength = watch('title')?.length || 0;
@@ -168,13 +174,21 @@ function EditIdeaPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <button
+      <motion.button
         onClick={() => navigate(-1)}
         className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-6"
+        initial={slideInLeft.initial}
+        animate={slideInLeft.animate}
+        transition={slideInLeft.transition}
       >
         <ArrowLeft className="h-4 w-4" /> Back
-      </button>
+      </motion.button>
 
+      <motion.div
+        initial={fadeInUp.initial}
+        animate={fadeInUp.animate}
+        transition={{ ...fadeInUp.transition, delay: 0.1 }}
+      >
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Edit Idea</CardTitle>
@@ -243,16 +257,23 @@ function EditIdeaPage() {
             {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                {...register('category', { required: 'Category is required' })}
-              >
-                <option value="">Select a category</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.slug} value={cat.slug}>{cat.name}</option>
-                ))}
-              </select>
+              <Controller
+                name="category"
+                control={control}
+                rules={{ required: 'Category is required' }}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="category" error={errors.category}>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.category && <p className="text-xs text-red-500">{errors.category.message}</p>}
             </div>
 
@@ -335,15 +356,22 @@ function EditIdeaPage() {
             {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                {...register('status')}
-              >
-                {IDEA_STATUSES.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IDEA_STATUSES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             {/* Actions */}
@@ -359,6 +387,7 @@ function EditIdeaPage() {
           </form>
         </CardContent>
       </Card>
+      </motion.div>
     </div>
   );
 }

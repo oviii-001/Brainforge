@@ -7,9 +7,14 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import EmptyState from '@/components/common/EmptyState';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/Select';
 import { Search, Filter, X, Lightbulb } from 'lucide-react';
 import { CATEGORIES, SORT_OPTIONS, IDEAS_PER_PAGE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
 
 function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,17 +121,22 @@ function ExplorePage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <motion.div className="mb-8" {...fadeInUp}>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Explore Ideas
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
           Discover innovative ideas and find your next project to collaborate on
         </p>
-      </div>
+      </motion.div>
 
       {/* Search + Filter bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+      <motion.div
+        className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.35 }}
+      >
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -146,15 +156,16 @@ function ExplorePage() {
 
         <div className="flex items-center gap-2">
           {/* Sort */}
-          <select
-            value={activeSort}
-            onChange={(e) => updateFilter('sort', e.target.value)}
-            className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary-500"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+          <Select value={activeSort} onValueChange={(val) => updateFilter('sort', val)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Button
             variant={showFilters ? 'secondary' : 'outline'}
@@ -164,45 +175,58 @@ function ExplorePage() {
             <Filter className="h-4 w-4" />
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Category filters */}
-      {showFilters && (
-        <div className="mb-6 p-4 rounded-xl border bg-gray-50 dark:bg-gray-900/50 animate-slide-down">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Categories</h3>
-            {hasActiveFilters && (
-              <button onClick={clearFilters} className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400">
-                Clear all
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => updateFilter('category', '')}>
-              <Badge
-                variant={!activeCategory ? 'default' : 'outline'}
-                className="cursor-pointer"
-              >
-                All
-              </Badge>
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button key={cat.slug} onClick={() => updateFilter('category', cat.slug)}>
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            className="mb-6 p-4 rounded-xl border bg-gray-50 dark:bg-gray-900/50"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Categories</h3>
+              {hasActiveFilters && (
+                <button onClick={clearFilters} className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400">
+                  Clear all
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => updateFilter('category', '')}>
                 <Badge
-                  variant={activeCategory === cat.slug ? 'default' : 'outline'}
+                  variant={!activeCategory ? 'default' : 'outline'}
                   className="cursor-pointer"
                 >
-                  {cat.name}
+                  All
                 </Badge>
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+              {CATEGORIES.map((cat) => (
+                <button key={cat.slug} onClick={() => updateFilter('category', cat.slug)}>
+                  <Badge
+                    variant={activeCategory === cat.slug ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                  >
+                    {cat.name}
+                  </Badge>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Active filters display */}
       {hasActiveFilters && (
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
+        <motion.div
+          className="flex items-center gap-2 mb-6 flex-wrap"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
           <span className="text-sm text-gray-500">Active filters:</span>
           {activeCategory && (
             <Badge variant="secondary" className="gap-1 pr-1">
@@ -220,7 +244,7 @@ function ExplorePage() {
               </button>
             </Badge>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Ideas grid */}
@@ -232,11 +256,18 @@ function ExplorePage() {
         </div>
       ) : ideas.length > 0 ? (
         <>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
             {ideas.map((idea) => (
-              <IdeaCard key={idea.id} idea={idea} />
+              <motion.div key={idea.id} variants={staggerItem}>
+                <IdeaCard idea={idea} />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Load more */}
           {hasMore && (

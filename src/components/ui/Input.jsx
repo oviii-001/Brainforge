@@ -1,11 +1,13 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
-const Input = forwardRef(({ className, type = 'text', error, ...props }, ref) => {
+const Input = forwardRef(({ className, type = 'text', error, errorId, ...props }, ref) => {
   return (
     <input
       type={type}
       ref={ref}
+      aria-invalid={error ? 'true' : undefined}
+      aria-describedby={error && errorId ? errorId : undefined}
       className={cn(
         'flex h-10 w-full rounded-lg border bg-white px-3 py-2 text-sm transition-colors',
         'placeholder:text-gray-400 dark:placeholder:text-gray-500',

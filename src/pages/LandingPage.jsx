@@ -1,8 +1,14 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useInView, useSpring, useTransform } from 'framer-motion';
+import { collection, getCountFromServer } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import {
+  staggerContainer, staggerItem, scrollReveal, hoverLift,
+} from '@/lib/animations';
 import {
   Lightbulb, Users, Rocket, ArrowRight, CheckCircle,
   Monitor, Briefcase, GraduationCap, Heart, Globe,
@@ -15,26 +21,86 @@ const iconMap = {
   Gamepad2, Palette, FlaskConical, TrendingUp, Lightbulb,
 };
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 },
-};
+// Animated counter hook
+function AnimatedCounter({ value, duration = 1.5 }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const spring = useSpring(0, { duration: duration * 1000 });
+  const display = useTransform(spring, (v) => Math.round(v));
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    if (isInView) {
+      spring.set(value);
+    }
+  }, [isInView, value, spring]);
+
+  useEffect(() => {
+    const unsubscribe = display.on('change', (v) => setDisplayValue(v));
+    return unsubscribe;
+  }, [display]);
+
+  return <span ref={ref}>{displayValue}</span>;
+}
 
 function LandingPage() {
   const { user } = useAuth();
+  const [stats, setStats] = useState({ ideas: 0, users: 0, teams: 0 });
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const [ideasSnap, usersSnap] = await Promise.all([
+          getCountFromServer(collection(db, 'ideas')),
+          getCountFromServer(collection(db, 'users')),
+        ]);
+        setStats({
+          ideas: ideasSnap.data().count,
+          users: usersSnap.data().count,
+          teams: Math.max(1, Math.floor(ideasSnap.data().count * 0.4)),
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
       <section className="relative px-4 pt-20 pb-24 sm:pt-28 sm:pb-32">
-        {/* Background gradient */}
+        {/* Background gradient blob */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-primary-400/20 via-purple-400/10 to-transparent rounded-full blur-3xl" />
+          <motion.div
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-br from-primary-400/20 via-purple-400/10 to-transparent rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.05, 1],
+              opacity: [0.6, 0.8, 0.6],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          {/* Dot grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+            style={{
+              backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }}
+          />
         </div>
 
-        <div className="mx-auto max-w-4xl text-center">
-          <motion.div {...fadeInUp}>
+        <motion.div
+          className="mx-auto max-w-4xl text-center"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          <motion.div variants={staggerItem}>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 dark:bg-primary-900/20 px-4 py-1.5 text-sm font-medium text-primary-700 dark:text-primary-300 mb-6">
               <Zap className="h-3.5 w-3.5" />
               Where ideas meet execution
@@ -43,9 +109,7 @@ function LandingPage() {
 
           <motion.h1
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            variants={staggerItem}
           >
             Turn your ideas into{' '}
             <span className="gradient-text">reality</span>
@@ -54,9 +118,7 @@ function LandingPage() {
 
           <motion.p
             className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            variants={staggerItem}
           >
             Brainforge is a collaborative marketplace where innovators share startup ideas,
             find co-founders, and build projects together. Share your vision and connect with
@@ -65,9 +127,7 @@ function LandingPage() {
 
           <motion.div
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            variants={staggerItem}
           >
             {user ? (
               <>
@@ -101,42 +161,49 @@ function LandingPage() {
             )}
           </motion.div>
 
-          {/* Stats */}
+          {/* Animated Stats */}
           <motion.div
             className="flex items-center justify-center gap-8 sm:gap-16 mt-16"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            variants={staggerItem}
           >
             {[
-              { label: 'Ideas Shared', value: '500+' },
-              { label: 'Collaborators', value: '1.2K+' },
-              { label: 'Teams Formed', value: '200+' },
+              { label: 'Ideas Shared', value: stats.ideas },
+              { label: 'Collaborators', value: stats.users },
+              { label: 'Teams Formed', value: stats.teams },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {stat.value}
+                  <AnimatedCounter value={stat.value} />+
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</div>
               </div>
             ))}
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* How It Works */}
       <section id="how-it-works" className="px-4 py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
+          <motion.div
+            className="text-center mb-16"
+            {...scrollReveal}
+          >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               How Brainforge Works
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               From idea to execution in three simple steps
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <motion.div
+            className="grid md:grid-cols-3 gap-8"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: '-50px' }}
+          >
             {[
               {
                 icon: Lightbulb,
@@ -156,13 +223,10 @@ function LandingPage() {
                 description: 'Work with your team to turn the idea into reality. Track progress, discuss strategies, and launch your project.',
                 step: '03',
               },
-            ].map((item, index) => (
+            ].map((item) => (
               <motion.div
                 key={item.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
+                variants={staggerItem}
               >
                 <Card className="relative overflow-hidden h-full">
                   <CardContent className="p-8">
@@ -182,32 +246,39 @@ function LandingPage() {
                 </Card>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Categories */}
       <section className="px-4 py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
+          <motion.div
+            className="text-center mb-16"
+            {...scrollReveal}
+          >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Explore by Category
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Discover ideas across different domains and industries
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {CATEGORIES.map((category, index) => {
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: '-50px' }}
+          >
+            {CATEGORIES.map((category) => {
               const Icon = iconMap[category.icon] || Lightbulb;
               return (
                 <motion.div
                   key={category.slug}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  variants={staggerItem}
+                  whileHover={hoverLift}
                 >
                   <Link to={`/explore?category=${category.slug}`}>
                     <Card hover className="text-center">
@@ -224,23 +295,32 @@ function LandingPage() {
                 </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Features */}
       <section className="px-4 py-20 bg-gray-50 dark:bg-gray-900/50">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center mb-16">
+          <motion.div
+            className="text-center mb-16"
+            {...scrollReveal}
+          >
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Everything you need
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Powerful features to help you go from idea to launch
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: '-50px' }}
+          >
             {[
               { title: 'Idea Sharing', desc: 'Post detailed ideas with categories, tags, and skill requirements' },
               { title: 'Smart Discovery', desc: 'Find ideas that match your skills and interests' },
@@ -248,14 +328,11 @@ function LandingPage() {
               { title: 'Community Discussion', desc: 'Comment, upvote, and engage with the community' },
               { title: 'Progress Tracking', desc: 'Track idea stages from concept to launch' },
               { title: 'Real-time Updates', desc: 'Get notified when someone interacts with your ideas' },
-            ].map((feature, index) => (
+            ].map((feature) => (
               <motion.div
                 key={feature.title}
                 className="flex items-start gap-3 p-4"
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
+                variants={staggerItem}
               >
                 <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
                 <div>
@@ -264,14 +341,17 @@ function LandingPage() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* CTA */}
       {!user && (
         <section className="px-4 py-20">
-          <div className="mx-auto max-w-4xl">
+          <motion.div
+            className="mx-auto max-w-4xl"
+            {...scrollReveal}
+          >
             <Card className="bg-gradient-to-r from-primary-600 to-purple-600 border-0">
               <CardContent className="p-12 text-center">
                 <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
@@ -289,7 +369,7 @@ function LandingPage() {
                 </Link>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </section>
       )}
     </div>

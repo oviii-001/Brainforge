@@ -1,7 +1,7 @@
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cn, getInitials, stringToColor } from '@/lib/utils';
 
-function Avatar({ src, name, size = 'md', className, ...props }) {
+function Avatar({ src, name, size = 'md', hoverRing = false, className, ...props }) {
   const sizes = {
     xs: 'h-6 w-6 text-[10px]',
     sm: 'h-8 w-8 text-xs',
@@ -14,8 +14,9 @@ function Avatar({ src, name, size = 'md', className, ...props }) {
   return (
     <AvatarPrimitive.Root
       className={cn(
-        'relative flex shrink-0 overflow-hidden rounded-full',
+        'relative flex shrink-0 overflow-hidden rounded-full transition-all duration-200',
         sizes[size],
+        hoverRing && 'hover:ring-2 hover:ring-primary-400 hover:ring-offset-2 dark:hover:ring-offset-gray-950',
         className
       )}
       {...props}
