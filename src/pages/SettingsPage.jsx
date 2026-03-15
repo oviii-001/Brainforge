@@ -17,7 +17,7 @@ import Avatar from '@/components/ui/Avatar';
 import { toast } from 'sonner';
 import { Save, Upload, X, User, Link as LinkIcon, Shield } from 'lucide-react';
 import { SKILLS, MAX_BIO_LENGTH } from '@/lib/constants';
-import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 function SettingsPage() {
   const { user, userProfile, refreshProfile } = useAuth();
@@ -132,20 +132,6 @@ function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <motion.div
-        className="mb-8"
-        initial={fadeInUp.initial}
-        animate={fadeInUp.animate}
-        transition={fadeInUp.transition}
-      >
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Settings
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Manage your profile and preferences
-        </p>
-      </motion.div>
-
       <motion.div
         variants={staggerContainer}
         initial="initial"

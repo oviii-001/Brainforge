@@ -12,7 +12,7 @@ import Button from '@/components/ui/Button';
 import { Rss, Compass, Users, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 const FEED_PER_PAGE = 12;
 
@@ -124,16 +124,6 @@ function FeedPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <motion.div className="mb-6" {...fadeInUp}>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Your Feed
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Stay updated with ideas from people you follow
-        </p>
-      </motion.div>
-
       {/* Feed type tabs */}
       <motion.div
         className="flex items-center gap-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit relative"

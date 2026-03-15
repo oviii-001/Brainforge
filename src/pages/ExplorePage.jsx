@@ -14,7 +14,7 @@ import { Search, Filter, X, Lightbulb } from 'lucide-react';
 import { CATEGORIES, SORT_OPTIONS, IDEAS_PER_PAGE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, staggerItem, fadeInUp } from '@/lib/animations';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,16 +120,6 @@ function ExplorePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <motion.div className="mb-8" {...fadeInUp}>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Explore Ideas
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Discover innovative ideas and find your next project to collaborate on
-        </p>
-      </motion.div>
-
       {/* Search + Filter bar */}
       <motion.div
         className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6"

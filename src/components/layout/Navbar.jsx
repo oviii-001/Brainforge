@@ -35,6 +35,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Route-based page titles for the app topbar
+const PAGE_TITLES = {
+  '/dashboard': { title: 'Dashboard', subtitle: "Here's what's happening with your ideas" },
+  '/feed': { title: 'Your Feed', subtitle: 'Stay updated with ideas from people you follow' },
+  '/explore': { title: 'Explore Ideas', subtitle: 'Discover innovative ideas to collaborate on' },
+  '/messages': { title: 'Messages', subtitle: 'Your conversations' },
+  '/notifications': { title: 'Notifications' },
+  '/bookmarks': { title: 'Bookmarks', subtitle: "Ideas you've saved for later" },
+  '/settings': { title: 'Settings', subtitle: 'Manage your profile and preferences' },
+  '/admin': { title: 'Admin Dashboard', subtitle: 'Manage users, content, and platform settings' },
+  '/ideas/new': { title: 'Share Your Idea' },
+};
+
 function Navbar({ variant = 'marketing' }) {
   const isApp = variant === 'app';
   const { user, userProfile, logout } = useAuth();
@@ -124,6 +137,22 @@ function Navbar({ variant = 'marketing' }) {
 
   const isActive = (path) => location.pathname === path;
 
+  // Resolve current page title for app mode
+  const getPageInfo = () => {
+    if (!isApp) return null;
+    const pathname = location.pathname;
+    // Direct match
+    if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+    // Pattern matches
+    if (pathname.startsWith('/messages/')) return { title: 'Conversation' };
+    if (pathname.match(/^\/ideas\/[^/]+\/edit$/)) return { title: 'Edit Idea' };
+    if (pathname.match(/^\/ideas\/[^/]+$/)) return null; // IdeaDetail — no topbar title
+    if (pathname.match(/^\/profile\//)) return null; // Profile — no topbar title
+    return null;
+  };
+
+  const pageInfo = getPageInfo();
+
   return (
     <nav className={cn(
       'sticky top-0 z-40 w-full border-b bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg transition-shadow duration-300',
@@ -139,10 +168,30 @@ function Navbar({ variant = 'marketing' }) {
             <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary-600 text-white">
               <Lightbulb className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">
+            <span className={cn(
+              'text-xl font-bold text-gray-900 dark:text-white hidden sm:block',
+              isApp && pageInfo && 'hidden lg:block'
+            )}>
               Brainforge
             </span>
           </Link>
+
+          {/* Page title — app mode only */}
+          {isApp && pageInfo && (
+            <div className="hidden sm:flex items-center gap-3 min-w-0">
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden lg:block" />
+              <div className="min-w-0">
+                <h1 className="text-sm font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                  {pageInfo.title}
+                </h1>
+                {pageInfo.subtitle && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate leading-tight">
+                    {pageInfo.subtitle}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Search bar - desktop */}
           <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">

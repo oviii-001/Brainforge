@@ -13,7 +13,7 @@ import { Bookmark, X, Clock } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
 import { CATEGORIES } from '@/lib/constants';
 import { toast } from 'sonner';
-import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
+import { staggerContainer, staggerItem } from '@/lib/animations';
 
 function BookmarksPage() {
   const { user } = useAuth();
@@ -60,20 +60,6 @@ function BookmarksPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <motion.div
-        className="mb-8"
-        initial={fadeInUp.initial}
-        animate={fadeInUp.animate}
-        transition={fadeInUp.transition}
-      >
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Bookmarks
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Ideas you&apos;ve saved for later
-        </p>
-      </motion.div>
-
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (

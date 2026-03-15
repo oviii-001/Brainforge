@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/Select';
 import { toast } from 'sonner';
 import {
-  LayoutDashboard, Users, Lightbulb, Flag, Shield, Trash2,
+  LayoutDashboard, Users, Lightbulb, Flag, Trash2,
   Eye, Ban, CheckCircle, AlertTriangle,
 } from 'lucide-react';
 import { formatRelativeTime, formatCount, cn } from '@/lib/utils';
@@ -112,20 +112,6 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
-      <motion.div
-        className="mb-8"
-        initial={fadeInUp.initial}
-        animate={fadeInUp.animate}
-        transition={fadeInUp.transition}
-      >
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <Shield className="h-7 w-7 text-primary-600" /> Admin Dashboard
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Manage users, content, and platform settings
-        </p>
-      </motion.div>
-
       {/* Stats Cards */}
       <motion.div
         className="grid sm:grid-cols-3 gap-4 mb-8"

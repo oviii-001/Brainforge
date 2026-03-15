@@ -219,25 +219,6 @@ function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <motion.div
-        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
-        {...fadeInUp}
-      >
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {userProfile?.displayName?.split(' ')[0] || 'there'}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Here's what's happening with your ideas
-          </p>
-        </div>
-        <Button onClick={() => navigate('/ideas/new')}>
-          <Plus className="h-4 w-4" />
-          New Idea
-        </Button>
-      </motion.div>
-
       {/* Stats Grid */}
       <motion.div
         className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"

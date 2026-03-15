@@ -92,26 +92,14 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      <motion.div
-        className="flex items-center justify-between mb-8"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Notifications
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}` : 'All caught up!'}
-          </p>
-        </div>
-        {unreadCount > 0 && (
+      {/* Action bar */}
+      {unreadCount > 0 && (
+        <div className="flex justify-end mb-4">
           <Button variant="outline" size="sm" onClick={markAllAsRead}>
             <CheckCheck className="h-4 w-4" /> Mark all read
           </Button>
-        )}
-      </motion.div>
+        </div>
+      )}
 
       {/* Filter tabs */}
       <motion.div

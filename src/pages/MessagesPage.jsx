@@ -116,32 +116,8 @@ function MessagesPage() {
     return (otherUser.displayName || '').toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Count unread conversations
-  const unreadCount = conversations.filter((c) =>
-    c.lastSenderId && c.lastSenderId !== user.uid && !c.readBy?.[user.uid]
-  ).length;
-
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <motion.div
-        className="flex items-center justify-between mb-6"
-        initial={fadeInUp.initial}
-        animate={fadeInUp.animate}
-        transition={fadeInUp.transition}
-      >
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-            Messages
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {unreadCount > 0
-              ? `${unreadCount} unread conversation${unreadCount !== 1 ? 's' : ''}`
-              : 'Your conversations'}
-          </p>
-        </div>
-      </motion.div>
-
       {/* Search conversations */}
       {conversations.length > 0 && (
         <motion.div
