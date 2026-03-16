@@ -248,23 +248,14 @@ function SettingsPage() {
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'relative flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap z-10 flex-1 justify-center sm:flex-none',
+              'relative flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap flex-1 justify-center sm:flex-none',
               activeTab === tab.id
-                ? 'text-gray-900 dark:text-white'
+                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             )}
           >
-            {activeTab === tab.id && (
-              <motion.div
-                className="absolute inset-0 bg-white dark:bg-gray-900 rounded-md shadow-sm"
-                layoutId="settings-tab"
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-              />
-            )}
-            <span className="relative flex items-center gap-1.5">
-              <tab.icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </span>
+            <tab.icon className="h-4 w-4" />
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </motion.div>

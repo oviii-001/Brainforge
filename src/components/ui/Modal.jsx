@@ -1,12 +1,17 @@
+import { createContext, useContext } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const ModalContext = createContext(false);
+
 function Modal({ open, onOpenChange, children }) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      {children}
+      <ModalContext.Provider value={open}>
+        {children}
+      </ModalContext.Provider>
     </DialogPrimitive.Root>
   );
 }
@@ -19,10 +24,12 @@ function ModalTrigger({ children, asChild = true, ...props }) {
   );
 }
 
-function ModalContent({ className, children, title, description, open, ...props }) {
+function ModalContent({ className, children, title, description, ...props }) {
+  const open = useContext(ModalContext);
+
   return (
     <AnimatePresence>
-      {open !== false && (
+      {open && (
         <DialogPrimitive.Portal forceMount>
           <DialogPrimitive.Overlay asChild>
             <motion.div
