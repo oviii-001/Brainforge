@@ -46,6 +46,9 @@ function IdeaDetailPage() {
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState({});
 
+  // UI states
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
   // Collab request
   const [showCollabModal, setShowCollabModal] = useState(false);
   const [collabMessage, setCollabMessage] = useState('');
@@ -332,136 +335,293 @@ function IdeaDetailPage() {
   if (!idea) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="mx-auto max-w-[1024px] xl:max-w-[1100px] w-full px-4 sm:px-6 py-6 lg:py-8">
       {/* Back button */}
       <motion.button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 mb-6"
+        className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 mb-6 transition-colors"
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <ArrowLeft className="h-4 w-4" /> Back
+        <ArrowLeft className="h-4 w-4" /> Back to explore
       </motion.button>
 
-      {/* Header Area */}
-      <motion.div className="mb-8" {...fadeInUp}>
-        <div className="flex flex-wrap items-center gap-2 mb-3">
-          {category && (
-            <Badge variant="secondary">{category.name}</Badge>
-          )}
-          {status && (
-            <Badge className={status.color}>{status.label}</Badge>
-          )}
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
-          {idea.title}
-        </h1>
-
-        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-6 max-w-4xl">
-          {idea.summary}
-        </p>
-
-        {/* Meta Line */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {formatDate(idea.createdAt)}
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
-            {formatCount(idea.viewsCount || 0)} views
-          </span>
-          <span className="flex items-center gap-1">
-            <MessageSquare className="h-4 w-4" />
-            {formatCount(idea.commentsCount || 0)} comments
-          </span>
-        </div>
-      </motion.div>
-
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Grid Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start justify-center">
         
-        {/* Left Column: Description & Comments */}
-        <div className="lg:col-span-2">
-          {/* Description */}
-          <motion.div className="mb-10 bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm" {...scrollReveal}>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">About this idea</h2>
-            <div className="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-[15px] sm:text-base">
-              {idea.description}
-            </div>
-          </motion.div>
-
-          {/* Comments Section */}
-          <motion.div className="mb-8" id="comments" {...scrollReveal}>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" /> Discussion ({idea.commentsCount || 0})
-            </h2>
-
-            {/* Comment form */}
-            {user ? (
-              <form onSubmit={(e) => handleSubmitComment(e)} className="mb-8">
-                <div className="flex gap-3">
-                  <Avatar src={userProfile?.photoURL || user.photoURL} name={userProfile?.displayName || user.displayName} size="sm" className="mt-1 shrink-0" />
-                  <div className="flex-1">
-                    <Textarea
-                      placeholder="Share your thoughts or feedback..."
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      maxLength={MAX_COMMENT_LENGTH}
-                      className="min-h-[100px]"
-                    />
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-xs text-gray-400">{commentText.length}/{MAX_COMMENT_LENGTH}</span>
-                      <Button type="submit" disabled={!commentText.trim()} loading={commentSubmitting}>
-                        <Send className="h-4 w-4" /> Post Comment
-                      </Button>
+        {/* Left Column: Post Feed */}
+        <div className="flex-1 w-full min-w-0 max-w-full lg:max-w-[650px] space-y-4 lg:space-y-6">
+          {/* Main Idea Post Card */}
+          <Card className="rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm bg-white dark:bg-gray-900 overflow-hidden">
+            <CardContent className="p-4 sm:p-5">
+              {/* Post Header */}
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <Link to={`/profile/${idea.ownerId}`}>
+                    <Avatar src={idea.ownerPhotoURL} name={idea.ownerName} size="sm" />
+                  </Link>
+                  <div className="flex flex-col">
+                    <Link to={`/profile/${idea.ownerId}`} className="font-semibold text-gray-900 dark:text-white hover:underline text-sm">
+                      {idea.ownerName}
+                    </Link>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <span>{formatDate(idea.createdAt)}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {formatCount(idea.viewsCount || 0)} views</span>
                     </div>
                   </div>
                 </div>
-              </form>
-            ) : (
-              <Card className="mb-8 bg-gray-50 dark:bg-gray-800/50 border-dashed border-2">
-                <CardContent className="p-8 text-center">
-                  <MessageSquare className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    Join the conversation to share your thoughts.
-                  </p>
-                  <Button asChild>
-                    <Link to="/login">Log in to comment</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Comments list */}
-            {commentsLoading ? (
-              <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex gap-4">
-                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                    </div>
-                  </div>
-                ))}
+                {/* Badges */}
+                <div className="flex items-center gap-1.5">
+                  {category && (
+                    <Badge variant="secondary" className="px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-none">
+                      {category.name}
+                    </Badge>
+                  )}
+                  {status && (
+                    <Badge className={cn("px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-md border-none", status.color)}>
+                      {status.label}
+                    </Badge>
+                  )}
+                </div>
               </div>
-            ) : topLevelComments.length > 0 ? (
-              <motion.div
-                className="space-y-6"
-                variants={staggerContainer}
-                initial="initial"
-                animate="animate"
+
+              {/* Post Content */}
+              <div className="mb-4 mt-2">
+                <h1 className="text-[18px] sm:text-[20px] font-bold text-gray-900 dark:text-gray-100 mb-2.5 leading-snug">
+                  {idea.title}
+                </h1>
+                
+                {idea.summary && (
+                  <p className="text-[14px] text-gray-700 dark:text-gray-300 mb-3 bg-gray-50 dark:bg-[#242526] p-3 rounded-xl border border-gray-100 dark:border-gray-800/60 leading-relaxed font-medium">
+                    {idea.summary}
+                  </p>
+                )}
+                {/* Description with Read More */}
+                <div className="relative">
+                  <div className={cn(
+                    "text-[15px] text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed",
+                    !isDescriptionExpanded && "line-clamp-[10]"
+                  )}>
+                    {idea.description}
+                  </div>
+                  {!isDescriptionExpanded && idea.description?.length > 400 && (
+                    <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-white to-transparent dark:from-gray-900 pointer-events-none"></div>
+                  )}
+                </div>
+                {idea.description?.length > 400 && (
+                  <button 
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="mt-1.5 text-[14px] font-semibold text-gray-500 hover:text-gray-900 dark:hover:text-gray-300 hover:underline transition-colors"
+                  >
+                    {isDescriptionExpanded ? 'See less' : 'See more'}
+                  </button>
+                )}
+              </div>
+
+              {/* Requirements & Tags */}
+              {(idea.tags?.length > 0 || idea.skillsNeeded?.length > 0) && (
+                <div className="mt-4 mb-2 flex flex-col gap-2 bg-gray-50 dark:bg-gray-800/30 p-3 rounded-lg border border-gray-100 dark:border-gray-800/50">
+                  {idea.skillsNeeded && idea.skillsNeeded.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <Briefcase className="h-3.5 w-3.5" /> Skills:
+                      </span>
+                      {idea.skillsNeeded.map((skill) => (
+                        <Badge key={skill} variant="outline" className="px-1.5 py-0 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 font-medium rounded-md text-[10px] sm:text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  {idea.tags && idea.tags.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap text-xs mt-1">
+                      <span className="font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                        <Tag className="h-3.5 w-3.5" /> Tags:
+                      </span>
+                      {idea.tags.map((tag) => (
+                        <Link key={tag} to={`/explore?search=${tag}`} className="font-medium text-primary-600 dark:text-primary-400 hover:underline bg-primary-50 dark:bg-primary-900/20 px-1.5 py-0.5 rounded-md">
+                          #{tag}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Horizontal Action Bar */}
+              <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="flex items-center bg-gray-100/80 dark:bg-gray-800/80 rounded-full border border-gray-200/50 dark:border-gray-700/50 p-0.5">
+                    <button onClick={() => handleVote('up')} disabled={voteLoading} className={cn("p-1 sm:px-2 sm:py-1 rounded-full flex items-center gap-1 transition-colors font-medium text-xs sm:text-sm", userVote === 'up' ? "text-primary-700 bg-primary-100 dark:text-primary-400 dark:bg-primary-900/40" : "text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700")}>
+                      <ArrowUpCircle className="h-4 w-4" />
+                      <span>{formatCount(upvotes)}</span>
+                    </button>
+                    <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 mx-0.5 sm:mx-1"></div>
+                    <button onClick={() => handleVote('down')} disabled={voteLoading} className={cn("p-1 sm:px-2 sm:py-1 rounded-full flex items-center gap-1 transition-colors font-medium text-xs sm:text-sm", userVote === 'down' ? "text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/40" : "text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700")}>
+                      <ArrowDownCircle className="h-4 w-4" />
+                      <span>{formatCount(downvotes)}</span>
+                    </button>
+                    {(userVote === 'up' || userVote === 'down') && (
+                      <>
+                        <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 mx-0.5 sm:mx-1"></div>
+                        <span className="px-1.5 text-[10px] sm:text-xs font-bold text-gray-500 dark:text-gray-400">Net: {netVotes}</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button variant="ghost" size="sm" className="rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 h-8 px-2 sm:px-3" onClick={() => document.getElementById('comment-input')?.focus()}>
+                    <MessageSquare className="h-4 w-4 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
+                    <span className="text-xs sm:text-sm font-medium">{idea.commentsCount || 0} <span className="hidden sm:inline">Comments</span></span>
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className={cn("rounded-full h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-800", isBookmarked ? "text-primary-600 bg-primary-50 dark:bg-primary-900/20" : "text-gray-600 dark:text-gray-400")} onClick={handleBookmark} disabled={bookmarkLoading}>
+                    {isBookmarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+                  </Button>
+
+                  <div className="relative">
+                    <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" onClick={() => setShowShareMenu(!showShareMenu)}>
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    {showShareMenu && (
+                      <div className="absolute bottom-full right-0 mb-2 z-50 w-44 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl py-1 animate-in fade-in zoom-in-95">
+                        <button onClick={() => handleShare('copy')} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <Copy className="h-3.5 w-3.5 text-gray-400" /> Copy Link
+                        </button>
+                        <div className="h-px bg-gray-100 dark:bg-gray-800 my-0.5"></div>
+                        <button onClick={() => handleShare('twitter')} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <ExternalLink className="h-3.5 w-3.5 text-blue-400" /> Share on X
+                        </button>
+                        <button onClick={() => handleShare('linkedin')} className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                          <ExternalLink className="h-3.5 w-3.5 text-primary-600" /> LinkedIn
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+        </div>
+
+        {/* Right Column: Sidebar */}
+        <div className="w-full lg:w-[320px] xl:w-[340px] shrink-0 space-y-4 lg:space-y-6">
+          
+          {/* Owner Actions */}
+          {isOwner && (
+            <div className="flex items-center justify-between bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-1.5 shadow-sm">
+              <button 
+                onClick={() => navigate(`/ideas/${id}/edit`)}
+                className="flex flex-1 justify-center items-center gap-1.5 p-2 rounded-lg text-[13px] font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-all"
+                title="Edit Idea"
               >
-                {topLevelComments.map((comment) => {
-                  const replies = getReplies(comment.id);
-                  const showReplies = expandedReplies[comment.id];
-                  return (
-                    <motion.div key={comment.id} variants={staggerItem}>
+                <Edit className="h-4 w-4 shrink-0" />
+                <span>Edit</span>
+              </button>
+              <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1 shrink-0"></div>
+              <button 
+                onClick={() => setShowDeleteModal(true)}
+                className="flex flex-1 justify-center items-center gap-1.5 p-2 rounded-lg text-[13px] font-semibold text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                title="Delete Idea"
+              >
+                <Trash2 className="h-4 w-4 shrink-0" />
+                <span>Delete</span>
+              </button>
+            </div>
+          )}
+
+          {/* Team Section */}
+          <Card className="rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden bg-white dark:bg-gray-900">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" /> Team Members
+                </h3>
+                <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                  {team.length}/{idea.maxTeamSize || 5}
+                </span>
+              </div>
+
+              {team.length > 0 ? (
+                <div className="space-y-1 mb-3">
+                  {team.map((member) => (
+                    <Link
+                      key={member.id}
+                      to={`/profile/${member.userId}`}
+                      className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+                    >
+                      <Avatar src={member.userPhotoURL} name={member.userName} size="sm" className="h-7 w-7" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 truncate leading-tight">
+                          {member.userName}
+                        </p>
+                        <p className="text-[10px] font-medium text-gray-400 capitalize leading-tight">{member.role}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 px-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 mb-3">
+                  <p className="text-[11px] text-gray-500 font-medium">No team members yet.</p>
+                </div>
+              )}
+
+              {/* Collab Request Button Area */}
+              {user && !isOwner && !isTeamMember && !existingRequest && (
+                <Button className="w-full rounded-lg h-8 text-[13px] font-semibold" onClick={() => setShowCollabModal(true)}>
+                  Request to Join
+                </Button>
+              )}
+              {existingRequest && (
+                <div className={cn(
+                  "flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg text-[11px] font-semibold border",
+                  existingRequest.status === 'accepted' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' : 
+                  existingRequest.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' : 
+                  'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800'
+                )}>
+                  {existingRequest.status === 'accepted' ? 'Request Accepted' : 
+                   existingRequest.status === 'rejected' ? 'Request Declined' : 
+                   'Request Pending'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Comments Section */}
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col lg:sticky lg:top-[88px] lg:max-h-[calc(100vh-120px)] overflow-hidden" id="comments">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-900 flex justify-between items-center z-10">
+              <h2 className="text-[14px] font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                Discussion <span className="text-gray-500 font-medium text-[11px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md">{idea.commentsCount || 0}</span>
+              </h2>
+            </div>
+            
+            {/* Comments list (Scrollable) */}
+            <div className="p-3 overflow-y-auto flex-1 min-h-[min(300px,50vh)] space-y-4">
+              {commentsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="flex gap-3">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-3 w-24" />
+                        <Skeleton className="h-10 w-full rounded-2xl rounded-tl-sm" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : topLevelComments.length > 0 ? (
+                <div className="space-y-4 pb-2">
+                  {topLevelComments.map((comment) => {
+                    const replies = getReplies(comment.id);
+                    const showReplies = expandedReplies[comment.id];
+                    return (
                       <CommentItem
+                        key={comment.id}
                         comment={comment}
                         replies={replies}
                         showReplies={showReplies}
@@ -476,235 +636,52 @@ function IdeaDetailPage() {
                         user={user}
                         userProfile={userProfile}
                       />
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            ) : (
-              <div className="text-center py-12 px-4 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-                <MessageSquare className="h-8 w-8 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  No comments yet. Be the first to share your thoughts!
-                </p>
-              </div>
-            )}
-          </motion.div>
-        </div>
-
-        {/* Right Column: Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          
-          {/* Action Bar Card */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex flex-col gap-4">
-                {/* Voting Row */}
-                <div className="flex items-center justify-between p-1 bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-gray-700/50">
-                  <motion.button
-                    onClick={() => handleVote('up')}
-                    disabled={voteLoading}
-                    whileTap={{ scale: 0.95 }}
-                    className={cn(
-                      'flex-1 flex justify-center items-center gap-2 py-2.5 rounded-md transition-colors font-medium',
-                      userVote === 'up'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50'
-                    )}
-                  >
-                    <ArrowUpCircle className="h-5 w-5" />
-                    <span>{formatCount(upvotes)}</span>
-                  </motion.button>
-                  
-                  <div className="px-4 text-center">
-                    <span className="text-xs text-gray-400 font-medium tracking-wide uppercase block mb-0.5">Net</span>
-                    <span className="font-bold text-gray-900 dark:text-white text-lg leading-none">{netVotes}</span>
-                  </div>
-
-                  <motion.button
-                    onClick={() => handleVote('down')}
-                    disabled={voteLoading}
-                    whileTap={{ scale: 0.95 }}
-                    className={cn(
-                      'flex-1 flex justify-center items-center gap-2 py-2.5 rounded-md transition-colors font-medium',
-                      userVote === 'down'
-                        ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50'
-                    )}
-                  >
-                    <ArrowDownCircle className="h-5 w-5" />
-                    <span>{formatCount(downvotes)}</span>
-                  </motion.button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Bookmark Button */}
-                  <Button
-                    variant={isBookmarked ? 'secondary' : 'outline'}
-                    className="w-full"
-                    onClick={handleBookmark}
-                    disabled={bookmarkLoading}
-                  >
-                    {isBookmarked ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                    {isBookmarked ? 'Saved' : 'Save'}
-                  </Button>
-
-                  {/* Share Menu */}
-                  <div className="relative">
-                    <Button variant="outline" className="w-full" onClick={() => setShowShareMenu(!showShareMenu)}>
-                      <Share2 className="h-4 w-4" /> Share
-                    </Button>
-                    {showShareMenu && (
-                      <div className="absolute top-full mt-1 right-0 z-10 w-48 rounded-lg border bg-white dark:bg-gray-900 shadow-lg py-1 animate-slide-down">
-                        <button
-                          onClick={() => handleShare('copy')}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          <Copy className="h-4 w-4" /> Copy Link
-                        </button>
-                        <button
-                          onClick={() => handleShare('twitter')}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          <ExternalLink className="h-4 w-4" /> Share on X
-                        </button>
-                        <button
-                          onClick={() => handleShare('linkedin')}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                        >
-                          <ExternalLink className="h-4 w-4" /> Share on LinkedIn
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Owner Actions */}
-                {isOwner && (
-                  <div className="pt-3 mt-1 border-t dark:border-gray-800 grid grid-cols-2 gap-2">
-                    <Button variant="outline" onClick={() => navigate(`/ideas/${id}/edit`)}>
-                      <Edit className="h-4 w-4" /> Edit
-                    </Button>
-                    <Button variant="destructive" onClick={() => setShowDeleteModal(true)}>
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Author Card */}
-          <Card>
-            <CardContent className="p-5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">Creator</h3>
-              <div className="flex items-center gap-4">
-                <Avatar src={idea.ownerPhotoURL} name={idea.ownerName} size="lg" className="border-2 border-white dark:border-gray-800 shadow-sm" />
-                <div className="min-w-0">
-                  <Link to={`/profile/${idea.ownerId}`} className="text-base font-bold text-gray-900 dark:text-white hover:underline truncate block">
-                    {idea.ownerName}
-                  </Link>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Idea Owner</p>
-                </div>
-              </div>
-              <div className="mt-5 pt-4 border-t dark:border-gray-800">
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to={`/profile/${idea.ownerId}`}>View Profile</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Team Section */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                  <Users className="h-4 w-4" /> Team ({team.length}/{idea.maxTeamSize || 5})
-                </h3>
-              </div>
-
-              {team.length > 0 ? (
-                <div className="space-y-3 mb-5">
-                  {team.map((member) => (
-                    <Link
-                      key={member.id}
-                      to={`/profile/${member.userId}`}
-                      className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                      <Avatar src={member.userPhotoURL} name={member.userName} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                          {member.userName}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 capitalize truncate">{member.role}</p>
-                      </div>
-                    </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 text-center py-4 bg-gray-50 dark:bg-gray-800/30 rounded-lg">
-                  No team members yet.
-                </p>
-              )}
-
-              {/* Collab Request Button Area */}
-              {user && !isOwner && !isTeamMember && !existingRequest && (
-                <Button className="w-full" onClick={() => setShowCollabModal(true)}>
-                  Request to Join Team
-                </Button>
-              )}
-              {existingRequest && (
-                <div className="w-full text-center">
-                  <Badge
-                    variant={existingRequest.status === 'accepted' ? 'success' : existingRequest.status === 'rejected' ? 'destructive' : 'warning'}
-                    className="w-full justify-center py-1.5 text-sm"
-                  >
-                    Request {existingRequest.status}
-                  </Badge>
+                <div className="text-center py-8">
+                  <p className="text-[13px] text-gray-500 dark:text-gray-400">No comments yet. Be the first to share your thoughts!</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Requirements (Tags & Skills) */}
-          {(idea.tags?.length > 0 || idea.skillsNeeded?.length > 0) && (
-            <Card>
-              <CardContent className="p-5 space-y-6">
-                {idea.skillsNeeded && idea.skillsNeeded.length > 0 && (
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" /> Skills Needed
-                    </h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {idea.skillsNeeded.map((skill) => (
-                        <Badge key={skill} variant="secondary" className="font-normal border dark:border-gray-700">{skill}</Badge>
-                      ))}
+            {/* Comment form (Sticky Footer) */}
+            <div className="p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+              {user ? (
+                <form onSubmit={(e) => handleSubmitComment(e)} className="flex gap-2.5">
+                  <Avatar src={userProfile?.photoURL || user.photoURL} name={userProfile?.displayName || user.displayName} size="sm" className="shrink-0 h-8 w-8 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="bg-white dark:bg-gray-800/40 rounded-[20px] border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 focus-within:border-gray-300 dark:focus-within:border-gray-500 transition-all p-1 shadow-sm">
+                      <Textarea
+                        id="comment-input"
+                        placeholder="Write a comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        maxLength={MAX_COMMENT_LENGTH}
+                        className="min-h-[36px] border-0 focus-visible:ring-0 shadow-none bg-transparent resize-y text-[13px] py-1.5 px-3 m-0"
+                      />
+                      {(commentText.length > 0 || commentSubmitting) && (
+                        <div className="flex items-center justify-between px-3 pb-1 pt-0.5 fadeIn animate-in fade-in zoom-in-95 duration-200">
+                          <span className="text-[10px] text-gray-400 font-medium">{commentText.length}/{MAX_COMMENT_LENGTH}</span>
+                          <Button type="submit" size="sm" disabled={!commentText.trim()} loading={commentSubmitting} className="rounded-full h-7 px-3 text-[11px] font-bold shadow-sm">
+                            <Send className="h-3 w-3 mr-1" /> Post
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-                
-                {idea.tags && idea.tags.length > 0 && (
-                  <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-                      <Tag className="h-4 w-4" /> Tags
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {idea.tags.map((tag) => (
-                        <Link
-                          key={tag}
-                          to={`/explore?search=${tag}`}
-                          className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 hover:underline"
-                        >
-                          #{tag}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
+                </form>
+              ) : (
+                <div className="text-center">
+                  <p className="text-[12px] text-gray-500 mb-2">Log in to share your thoughts.</p>
+                  <Button asChild size="sm" className="rounded-full h-8 text-[12px] w-full">
+                    <Link to="/login">Log In</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -767,128 +744,134 @@ function CommentItem({
   const isAuthor = user && user.uid === comment.userId;
 
   return (
-    <div className="group bg-white dark:bg-gray-900/50 rounded-xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-      <div className="flex gap-3 sm:gap-4">
-        <Link to={`/profile/${comment.userId}`} className="shrink-0 mt-1">
-          <Avatar src={comment.userPhotoURL} name={comment.userName} size="md" />
-        </Link>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Link to={`/profile/${comment.userId}`} className="text-sm font-bold text-gray-900 dark:text-white hover:underline">
-              {comment.userName}
-            </Link>
-            <span className="text-xs text-gray-500 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-              {formatRelativeTime(comment.createdAt)}
-            </span>
-          </div>
-          <p className="text-[15px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
+    <div className="group flex gap-2.5 sm:gap-3 relative">
+      <Link to={`/profile/${comment.userId}`} className="shrink-0 mt-0.5 z-10">
+        <Avatar src={comment.userPhotoURL} name={comment.userName} size="sm" className="h-9 w-9 border-2 border-white dark:border-gray-900 shadow-sm" />
+      </Link>
+      
+      <div className="flex-1 min-w-0 pb-1">
+        <div className="bg-gray-100 dark:bg-gray-800/60 rounded-2xl rounded-tl-sm px-4 py-3 inline-block max-w-full">
+          <Link to={`/profile/${comment.userId}`} className="text-[14px] font-bold text-gray-900 dark:text-white hover:underline block mb-0.5">
+            {comment.userName}
+          </Link>
+          <p className="text-[14px] text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
             {comment.text}
           </p>
-          
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50 dark:border-gray-800/50">
-            {user && (
-              <button
-                onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
-                className="text-xs font-medium text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1.5 transition-colors"
-              >
-                <Reply className="h-3.5 w-3.5" /> Reply
-              </button>
-            )}
-            {replies.length > 0 && (
-              <button
-                onClick={() => toggleReplies(comment.id)}
-                className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 flex items-center gap-1.5 transition-colors"
-              >
-                {showReplies ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
-              </button>
-            )}
-            {isAuthor && (
-              <button
-                onClick={() => handleDeleteComment(comment.id)}
-                className="text-xs font-medium text-gray-400 hover:text-red-600 dark:hover:text-red-400 ml-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1.5"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Delete
-              </button>
-            )}
-          </div>
-
-          {/* Reply input */}
-          {replyTo === comment.id && (
-            <motion.form 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              onSubmit={(e) => handleSubmitComment(e, comment.id)} 
-              className="mt-4 flex gap-3 overflow-hidden"
+        </div>
+        
+        <div className="flex items-center gap-3 mt-1.5 px-2">
+          <span className="text-[11px] text-gray-500 font-medium">{formatRelativeTime(comment.createdAt)}</span>
+          {user && (
+            <button
+              onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+              className="text-[12px] font-bold text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
-              <Avatar
-                src={userProfile?.photoURL || user?.photoURL}
-                name={userProfile?.displayName || user?.displayName}
-                size="sm"
-                className="mt-1 shrink-0"
-              />
-              <div className="flex-1 bg-gray-50 dark:bg-gray-800/30 p-1 rounded-lg border dark:border-gray-700/50">
-                <Textarea
-                  placeholder={`Reply to ${comment.userName}...`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="min-h-[80px] text-sm border-0 bg-transparent focus-visible:ring-0 resize-none"
-                  maxLength={MAX_COMMENT_LENGTH}
-                />
-                <div className="flex justify-end gap-2 p-2 border-t dark:border-gray-700/50">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setReplyTo(null)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" size="sm" disabled={!replyText.trim()} loading={commentSubmitting}>
-                    Post Reply
-                  </Button>
-                </div>
-              </div>
-            </motion.form>
+              Reply
+            </button>
           )}
-
-          {/* Replies */}
-          {showReplies && replies.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-4 pl-4 sm:pl-6 border-l-[3px] border-gray-100 dark:border-gray-800 space-y-4"
+          {isAuthor && (
+            <button
+              onClick={() => handleDeleteComment(comment.id)}
+              className="text-[12px] font-bold text-gray-400 hover:text-red-500 dark:hover:text-red-500 transition-colors"
             >
-              {replies.map((reply) => (
-                <div key={reply.id} className="flex gap-3 group/reply bg-gray-50 dark:bg-gray-800/30 p-3 sm:p-4 rounded-xl">
-                  <Link to={`/profile/${reply.userId}`} className="shrink-0 mt-0.5">
-                    <Avatar src={reply.userPhotoURL} name={reply.userName} size="sm" />
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <Link to={`/profile/${reply.userId}`} className="text-sm font-semibold text-gray-900 dark:text-white hover:underline">
-                          {reply.userName}
-                        </Link>
-                        <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600"></span>
-                          {formatRelativeTime(reply.createdAt)}
-                        </span>
-                      </div>
-                      {user && user.uid === reply.userId && (
-                        <button
-                          onClick={() => handleDeleteComment(reply.id)}
-                          className="text-[11px] font-medium text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover/reply:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-[14px] text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words leading-relaxed">
-                      {reply.text}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </motion.div>
+              Delete
+            </button>
           )}
         </div>
+
+        {/* Reply input */}
+        {replyTo === comment.id && (
+          <motion.form 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onSubmit={(e) => handleSubmitComment(e, comment.id)} 
+            className="mt-3 flex gap-2.5 overflow-hidden ml-1"
+          >
+            <Avatar
+              src={userProfile?.photoURL || user?.photoURL}
+              name={userProfile?.displayName || user?.displayName}
+              size="sm"
+              className="shrink-0 h-7 w-7 mt-1 border border-white dark:border-gray-800"
+            />
+            <div className="flex-1 bg-gray-50 dark:bg-gray-800/40 rounded-2xl rounded-tl-sm border border-gray-200 dark:border-gray-700/50 p-1">
+              <Textarea
+                placeholder={`Reply to ${comment.userName}...`}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="min-h-[50px] text-[13px] border-0 bg-transparent focus-visible:ring-0 resize-none py-2 px-3 shadow-none focus-within:shadow-none"
+                maxLength={MAX_COMMENT_LENGTH}
+              />
+              <div className="flex justify-end gap-1.5 p-1 pt-0">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setReplyTo(null)} className="h-6 px-2.5 text-[11px] rounded-full text-gray-500 font-medium">
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={!replyText.trim()} loading={commentSubmitting} className="h-6 px-3 text-[11px] rounded-full font-bold">
+                  Post
+                </Button>
+              </div>
+            </div>
+          </motion.form>
+        )}
+
+        {/* Replies */}
+        {replies.length > 0 && (
+          <div className="mt-2.5">
+            {!showReplies ? (
+              <button
+                onClick={() => toggleReplies(comment.id)}
+                className="text-[13px] font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 hover:underline flex items-center gap-2 mb-2 ml-2 transition-colors"
+              >
+                <Reply className="h-3.5 w-3.5 rotate-180 text-gray-400" />
+                View {replies.length} {replies.length === 1 ? 'reply' : 'replies'}
+              </button>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-3.5 relative mt-3"
+              >
+                <div className="absolute top-0 bottom-4 left-[-26px] sm:left-[-30px] border-l-2 border-gray-100 dark:border-gray-800 rounded-bl-xl w-4"></div>
+                <button
+                  onClick={() => toggleReplies(comment.id)}
+                  className="text-[13px] font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 flex items-center gap-1.5 mb-3 ml-2 transition-colors"
+                >
+                  <ChevronUp className="h-3.5 w-3.5" />
+                  Hide replies
+                </button>
+                {replies.map((reply) => (
+                  <div key={reply.id} className="group flex gap-2.5 ml-1 relative">
+                    {/* curved corner pointing from main line to reply avatar */}
+                    <div className="absolute top-4 left-[-31px] sm:left-[-35px] border-b-2 border-l-2 border-gray-100 dark:border-gray-800 rounded-bl-xl w-6 h-6"></div>
+                    <Link to={`/profile/${reply.userId}`} className="shrink-0 mt-0.5 z-10">
+                      <Avatar src={reply.userPhotoURL} name={reply.userName} size="sm" className="h-7 w-7 border-2 border-white dark:border-gray-900 shadow-sm" />
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <div className="bg-gray-100 dark:bg-gray-800/60 rounded-2xl rounded-tl-sm px-3.5 py-2.5 inline-block max-w-full">
+                        <Link to={`/profile/${reply.userId}`} className="text-[13px] font-bold text-gray-900 dark:text-white hover:underline block mb-0.5">
+                          {reply.userName}
+                        </Link>
+                        <p className="text-[13px] text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words leading-relaxed">
+                          {reply.text}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5 px-2">
+                        <span className="text-[10px] text-gray-500 font-medium">{formatRelativeTime(reply.createdAt)}</span>
+                        {user && user.uid === reply.userId && (
+                          <button
+                            onClick={() => handleDeleteComment(reply.id)}
+                            className="text-[11px] font-bold text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
